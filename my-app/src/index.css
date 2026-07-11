@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   GLOBAL BASE
+   ========================================= */
+@layer base {
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: #FFFFFF;
+    color: #111827;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: #f1f5f9; }
+  ::-webkit-scrollbar-thumb { background: #0F56A8; border-radius: 4px; }
+}
+
+/* =========================================
+   DESIGN TOKENS
+   ========================================= */
+:root {
+  --navy:   #0A1628;
+  --navy2:  #0C2040;
+  --blue:   #0F56A8;
+  --gold:   #E8A020;
+  --gold2:  #F5B730;
+  --light:  #F4F6FA;
+  --white:  #FFFFFF;
+  --gray:   #6B7280;
+  --border: #E5E7EB;
+}
+
+/* =========================================
+   UTILITIES
+   ========================================= */
+@layer components {
+  .container-xl {
+    @apply max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16;
+  }
+
+  .section-py {
+    @apply py-10 md:py-14;
+  }
+
+  .section-label {
+    @apply text-xs font-semibold tracking-widest uppercase;
+  }
+
+  .section-title {
+    @apply font-poppins text-3xl md:text-4xl font-bold text-[#0A1628] leading-tight;
+  }
+
+  .gold-label {
+    @apply text-[#E8A020] text-xs font-semibold tracking-widest uppercase;
+  }
+
+  .btn-gold {
+    @apply inline-flex items-center gap-2 px-6 py-3 bg-[#E8A020] text-white font-semibold
+           rounded-lg hover:bg-[#c9880f] transition-all duration-200 text-sm;
+  }
+
+  .btn-outline-white {
+    @apply inline-flex items-center gap-2 px-6 py-3 border border-white/60 text-white
+           font-semibold rounded-lg hover:bg-white hover:text-[#0A1628] transition-all duration-200 text-sm;
+  }
+
+  .btn-outline-navy {
+    @apply inline-flex items-center gap-2 px-6 py-3 border border-[#0A1628] text-[#0A1628]
+           font-semibold rounded-lg hover:bg-[#0A1628] hover:text-white transition-all duration-200 text-sm;
+  }
+
+  .btn-navy {
+    @apply inline-flex items-center gap-2 px-6 py-3 bg-[#0A1628] text-white font-semibold
+           rounded-lg hover:bg-[#0C2040] transition-all duration-200 text-sm;
+  }
+
+  .card-shadow {
+    @apply shadow-[0_2px_20px_rgba(0,0,0,0.08)] border border-gray-100;
+  }
+}
+
+/* =========================================
+   WHATSAPP PULSE
+   ========================================= */
+.whatsapp-pulse {
+  animation: waPulse 2.5s ease-in-out infinite;
+}
+@keyframes waPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(37,211,102,0.5); }
+  70%  { box-shadow: 0 0 0 14px rgba(37,211,102,0); }
+  100% { box-shadow: 0 0 0 0 rgba(37,211,102,0); }
+}
+
+/* =========================================
+   GALLERY IMAGE
+   ========================================= */
+.gallery-img {
+  transition: transform 0.4s ease;
+}
+.gallery-img:hover {
+  transform: scale(1.04);
+}
+
+/* =========================================
+   INFINITE MARQUEE
+   ========================================= */
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 1.5rem;
+  animation: marqueeScroll 45s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+@keyframes marqueeScroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
