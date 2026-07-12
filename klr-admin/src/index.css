@@ -333,7 +333,7 @@ a { text-decoration: none; color: inherit; }
 /* ─── DASHBOARD GRID ─── */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 16px;
 }
 
@@ -647,6 +647,7 @@ a { text-decoration: none; color: inherit; }
   animation: slideUp 0.2s ease;
 }
 .modal-sm { max-width: 460px; }
+.modal-lg { max-width: 850px; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
 .modal-header {
   display: flex;

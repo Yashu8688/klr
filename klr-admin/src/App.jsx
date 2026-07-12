@@ -5,7 +5,7 @@ import {
   MapPin, TrendingUp, FileText, X, UserCheck,
   Menu, Quote, AlertCircle, ImagePlus, PhoneCall,
   Clock, Globe,
-  CheckCircle, UploadCloud, Image
+  CheckCircle, UploadCloud, Image, FolderOpen
 } from 'lucide-react';
 import {
   getProperties, saveProperties,
@@ -44,8 +44,10 @@ export default function App() {
   const [propertyModalOpen, setPropertyModalOpen] = useState(false);
   const [editingProperty, setEditingProperty] = useState(null);
   const [propForm, setPropForm] = useState({
-    name: '', location: '', price: '', plotSizes: '',
-    status: 'Available', totalPlots: '', rera: '', description: ''
+    name: '', location: '', price: '', pricePerSqYd: '', plotSizes: '',
+    status: 'Available', totalPlots: '', rera: '', description: '',
+    highlightsText: '', amenitiesText: '', nearbyLandmarksText: '',
+    image: '', gallery: []
   });
 
   // Testimonial modal
@@ -60,6 +62,9 @@ export default function App() {
   // Gallery drag-over
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
+  const [currentAlbumId, setCurrentAlbumId] = useState(null);
+  const [albumModalOpen, setAlbumModalOpen] = useState(false);
+  const [albumForm, setAlbumForm] = useState({ name: '', date: '' });
 
   // Contact info form
   const [contactForm, setContactForm] = useState(null);
@@ -80,21 +85,58 @@ export default function App() {
   /* ── Property Actions ── */
   const openAddProperty = () => {
     setEditingProperty(null);
-    setPropForm({ name: '', location: '', price: '', plotSizes: '100 – 300 Sq.Yds', status: 'Available', totalPlots: '', rera: '', description: '' });
+    setPropForm({
+      name: '',
+      location: '',
+      price: '',
+      pricePerSqYd: '',
+      plotSizes: '100 – 300 Sq.Yds',
+      status: 'Available',
+      totalPlots: '',
+      rera: '',
+      description: '',
+      highlightsText: '',
+      amenitiesText: '',
+      nearbyLandmarksText: '',
+      image: '',
+      gallery: []
+    });
     setPropertyModalOpen(true);
   };
   const openEditProperty = (prop) => {
     setEditingProperty(prop);
-    setPropForm({ ...prop });
+    setPropForm({
+      ...prop,
+      pricePerSqYd: prop.pricePerSqYd || '',
+      highlightsText: (prop.highlights || []).join('\n'),
+      amenitiesText: (prop.amenities || []).map(a => typeof a === 'object' ? a.label : a).join('\n'),
+      nearbyLandmarksText: (prop.nearbyLandmarks || []).join('\n'),
+      image: prop.image || '',
+      gallery: prop.gallery || []
+    });
     setPropertyModalOpen(true);
   };
   const handlePropertySubmit = (e) => {
     e.preventDefault();
+    const highlights = propForm.highlightsText.split('\n').map(s => s.trim()).filter(Boolean);
+    const amenities = propForm.amenitiesText.split('\n').map(s => s.trim()).filter(Boolean).map(label => ({ icon: 'star', label }));
+    const nearbyLandmarks = propForm.nearbyLandmarksText.split('\n').map(s => s.trim()).filter(Boolean);
+
+    const submissionData = {
+      ...propForm,
+      highlights,
+      amenities,
+      nearbyLandmarks
+    };
+    delete submissionData.highlightsText;
+    delete submissionData.amenitiesText;
+    delete submissionData.nearbyLandmarksText;
+
     let updated;
     if (editingProperty) {
-      updated = propertiesList.map(p => p.id === editingProperty.id ? { ...p, ...propForm } : p);
+      updated = propertiesList.map(p => p.id === editingProperty.id ? { ...p, ...submissionData } : p);
     } else {
-      updated = [...propertiesList, { ...propForm, id: Date.now().toString() }];
+      updated = [...propertiesList, { ...submissionData, id: Date.now().toString() }];
     }
     setPropertiesList(updated);
     saveProperties(updated);
@@ -147,6 +189,7 @@ export default function App() {
 
   /* ── Gallery Actions ── */
   const processFiles = (files) => {
+    if (!currentAlbumId) return;
     const allowed = Array.from(files).filter(f => f.type.startsWith('image/'));
     if (allowed.length === 0) { showToast('Only image files allowed!', 'error'); return; }
 
@@ -154,20 +197,29 @@ export default function App() {
       const reader = new FileReader();
       reader.onload = (e) => {
         setGalleryList(prev => {
-          const updated = [...prev, {
-            id: Date.now() + Math.random(),
-            src: e.target.result,
-            name: file.name,
-            date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-            size: (file.size / 1024).toFixed(0) + ' KB'
-          }];
+          const updated = prev.map(album => {
+            if (album.id === currentAlbumId) {
+              const newImage = {
+                id: Date.now() + Math.random(),
+                src: e.target.result,
+                name: file.name,
+                size: (file.size / 1024).toFixed(0) + ' KB'
+              };
+              return {
+                ...album,
+                images: [...(album.images || []), newImage],
+                thumbnail: album.thumbnail || e.target.result
+              };
+            }
+            return album;
+          });
           saveGallery(updated);
           return updated;
         });
       };
       reader.readAsDataURL(file);
     });
-    showToast(`${allowed.length} image(s) uploaded!`);
+    showToast(`${allowed.length} image(s) uploaded to album!`);
   };
 
   const handleFileInput = (e) => processFiles(e.target.files);
@@ -178,11 +230,69 @@ export default function App() {
     processFiles(e.dataTransfer.files);
   };
 
-  const deleteGalleryImage = (id) => {
-    const updated = galleryList.filter(g => g.id !== id);
+  const deleteAlbum = (albumId) => {
+    if (window.confirm('Delete this entire album and all its images?')) {
+      const updated = galleryList.filter(a => a.id !== albumId);
+      setGalleryList(updated);
+      saveGallery(updated);
+      showToast('Album deleted.', 'error');
+    }
+  };
+
+  const deleteAlbumImage = (imgId) => {
+    if (window.confirm('Delete this image?')) {
+      const updated = galleryList.map(album => {
+        if (album.id === currentAlbumId) {
+          const filteredImages = album.images.filter(img => img.id !== imgId);
+          let newThumb = album.thumbnail;
+          if (album.thumbnail && album.images.find(img => img.id === imgId)?.src === album.thumbnail) {
+            newThumb = filteredImages[0] ? filteredImages[0].src : '';
+          }
+          return {
+            ...album,
+            images: filteredImages,
+            thumbnail: newThumb
+          };
+        }
+        return album;
+      });
+      setGalleryList(updated);
+      saveGallery(updated);
+      showToast('Image removed.', 'error');
+    }
+  };
+
+  const setAlbumCover = (imgSrc) => {
+    const updated = galleryList.map(album => {
+      if (album.id === currentAlbumId) {
+        return {
+          ...album,
+          thumbnail: imgSrc
+        };
+      }
+      return album;
+    });
     setGalleryList(updated);
     saveGallery(updated);
-    showToast('Image removed.', 'error');
+    showToast('Album cover updated!');
+  };
+
+  const handleAddAlbumSubmit = (e) => {
+    e.preventDefault();
+    if (!albumForm.name.trim()) return;
+    const newAlbum = {
+      id: Date.now().toString(),
+      name: albumForm.name,
+      date: albumForm.date || new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
+      thumbnail: '',
+      images: []
+    };
+    const updated = [...galleryList, newAlbum];
+    setGalleryList(updated);
+    saveGallery(updated);
+    setAlbumModalOpen(false);
+    setAlbumForm({ name: '', date: '' });
+    showToast('Album created!');
   };
 
   /* ── Contact Info Actions ── */
@@ -292,13 +402,6 @@ export default function App() {
             <button className="hamburger" onClick={() => setSidebarOpen(true)}><Menu size={20} /></button>
             <h1 className="topbar-title">{tabTitle[activeTab]}</h1>
           </div>
-          <div className="topbar-right">
-            <div className="admin-info">
-              <div className="admin-name">Yashwanth</div>
-              <div className="admin-role">Super Admin</div>
-            </div>
-            <div className="admin-avatar">Y</div>
-          </div>
         </header>
 
         <main className="page-content">
@@ -325,42 +428,6 @@ export default function App() {
               </div>
 
               <div className="dashboard-grid">
-                <div className="card">
-                  <div className="card-header">
-                    <div>
-                      <div className="card-title">Leads Received Trend</div>
-                      <div className="card-subtitle">Submissions over the past months</div>
-                    </div>
-                  </div>
-                  <div className="card-body">
-                    <div className="chart-container">
-                      <svg viewBox="0 0 500 150" preserveAspectRatio="none" width="100%" height="150">
-                        <defs>
-                          <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#e8a020" stopOpacity="0.18" />
-                            <stop offset="100%" stopColor="#e8a020" stopOpacity="0" />
-                          </linearGradient>
-                        </defs>
-                        <line x1="0" y1="40" x2="500" y2="40" stroke="#eeeeee" strokeWidth="1" />
-                        <line x1="0" y1="85" x2="500" y2="85" stroke="#eeeeee" strokeWidth="1" />
-                        <line x1="0" y1="130" x2="500" y2="130" stroke="#eeeeee" strokeWidth="1" />
-                        <path d="M0 150 L0 130 Q90 110 170 70 T330 35 Q420 52 500 28 L500 150Z" fill="url(#chartGrad)" />
-                        <path d="M0 130 Q90 110 170 70 T330 35 Q420 52 500 28" fill="none" stroke="#e8a020" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                        <circle cx="170" cy="70" r="4.5" fill="#fff" stroke="#e8a020" strokeWidth="2.5" />
-                        <circle cx="330" cy="35" r="4.5" fill="#fff" stroke="#e8a020" strokeWidth="2.5" />
-                        <circle cx="500" cy="28" r="4.5" fill="#fff" stroke="#e8a020" strokeWidth="2.5" />
-                      </svg>
-                    </div>
-                    <div className="chart-labels">
-                      <span className="chart-label">Mar</span>
-                      <span className="chart-label">Apr</span>
-                      <span className="chart-label">May</span>
-                      <span className="chart-label">Jun</span>
-                      <span className="chart-label">Jul</span>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="card">
                   <div className="card-header">
                     <div className="card-title">Recent Queries</div>
@@ -404,18 +471,26 @@ export default function App() {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Property Name</th><th>Location</th><th>Pricing</th><th>Plots</th><th>Status</th><th>RERA / LP</th><th style={{ textAlign: 'center' }}>Actions</th>
+                      <th>Property Name</th><th>Location</th><th>Pricing</th><th>Plots</th><th>Status</th><th style={{ textAlign: 'center' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredProperties.map(prop => (
                       <tr key={prop.id}>
-                        <td className="td-name">{prop.name}</td>
+                        <td className="td-name">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <img 
+                              src={prop.image || 'https://via.placeholder.com/60x40?text=No+Image'} 
+                              style={{ width: 44, height: 30, borderRadius: 4, objectFit: 'cover', background: '#eee', border: '1px solid #ddd', flexShrink: 0 }} 
+                            />
+                            <span>{prop.name}</span>
+                          </div>
+                        </td>
                         <td className="td-muted"><span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={12} style={{ color: '#aaa', flexShrink: 0 }} /> {prop.location}</span></td>
                         <td className="td-price">{prop.price}</td>
                         <td className="td-muted">{prop.totalPlots}</td>
                         <td><span className={statusBadgeClass(prop.status)}>{prop.status}</span></td>
-                        <td className="td-muted">{prop.rera || '—'}</td>
+
                         <td>
                           <div className="td-actions">
                             <button className="btn-icon btn-icon-edit" onClick={() => openEditProperty(prop)} title="Edit"><Edit2 size={13} /></button>
@@ -527,56 +602,176 @@ export default function App() {
           {/* ────────── GALLERY ────────── */}
           {activeTab === 'gallery' && (
             <div>
-              {/* Upload Zone */}
-              <div
-                className={`upload-zone${dragOver ? ' drag-over' : ''}`}
-                onClick={() => fileInputRef.current.click()}
-                onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={handleDrop}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFileInput}
-                />
-                <div className="upload-icon"><UploadCloud size={26} /></div>
-                <div className="upload-title">Click to Upload or Drag & Drop</div>
-                <div className="upload-sub">Supports <span>JPG, PNG, WEBP, GIF</span> — Multiple files allowed</div>
-              </div>
-
-              {/* Gallery Grid */}
-              {galleryList.length > 0 ? (
-                <>
-                  <div className="gallery-count">{galleryList.length} image{galleryList.length !== 1 ? 's' : ''} in gallery</div>
-                  <div className="gallery-grid">
-                    {galleryList.map(img => (
-                      <div className="gallery-item" key={img.id}>
-                        <img src={img.src} alt={img.name} />
-                        <div className="gallery-name">{img.name}</div>
-                        <div className="gallery-overlay">
-                          <button
-                            className="gallery-delete"
-                            onClick={e => { e.stopPropagation(); deleteGalleryImage(img.id); }}
-                            title="Remove image"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+              {currentAlbumId === null ? (
+                // ── ALBUMS (EVENTS) GRID VIEW ──
+                <div>
+                  <div className="section-header">
+                    <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-1)' }}>Gallery Albums & Events</h2>
+                    <button className="btn btn-gold" onClick={() => { setAlbumForm({ name: '', date: '' }); setAlbumModalOpen(true); }}>
+                      <Plus size={15} /> Create Album
+                    </button>
+                  </div>
+                  {galleryList.length === 0 ? (
+                    <div className="card">
+                      <div className="card-body">
+                        <div className="empty-state">
+                          <div className="empty-icon"><FolderOpen size={24} /></div>
+                          No albums found. Click the button above to create one.
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="card">
-                  <div className="card-body">
-                    <div className="empty-state">
-                      <div className="empty-icon"><Image size={24} /></div>
-                      No images yet. Click the upload area above to add images.
                     </div>
-                  </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 18 }}>
+                      {galleryList.map(album => (
+                        <div 
+                          key={album.id} 
+                          style={{ 
+                            background: 'var(--white)', 
+                            borderRadius: 'var(--radius-lg)', 
+                            border: '1.5px solid var(--border-light)', 
+                            overflow: 'hidden', 
+                            boxShadow: 'var(--shadow-sm)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            height: 250
+                          }}
+                          onClick={() => setCurrentAlbumId(album.id)}
+                        >
+                          <div style={{ height: 140, background: '#eef2f6', position: 'relative', overflow: 'hidden' }}>
+                            <img 
+                              src={album.thumbnail || (album.images && album.images[0] ? album.images[0].src : '') || 'https://via.placeholder.com/300x150?text=No+Cover'} 
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                            />
+                            <span style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 10, padding: '3px 8px', borderRadius: 20 }}>
+                              {album.date}
+                            </span>
+                          </div>
+                          <div style={{ padding: 12, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                            <div>
+                              <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: 'var(--text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {album.name}
+                              </h4>
+                              <p style={{ margin: '4px 0 0 0', fontSize: 11, color: 'var(--text-4)' }}>
+                                {album.images ? album.images.length : 0} image(s)
+                              </p>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }} onClick={e => e.stopPropagation()}>
+                              <button className="btn btn-outline" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => setCurrentAlbumId(album.id)}>
+                                Manage
+                              </button>
+                              <button className="btn-icon btn-icon-delete" onClick={() => deleteAlbum(album.id)}>
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // ── IMAGES WITHIN SPECIFIC ALBUM VIEW ──
+                <div>
+                  {(() => {
+                    const activeAlbum = galleryList.find(a => a.id === currentAlbumId);
+                    if (!activeAlbum) return <button className="btn btn-outline" onClick={() => setCurrentAlbumId(null)}>← Back to Albums</button>;
+                    return (
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
+                          <button className="btn btn-outline" onClick={() => setCurrentAlbumId(null)}>
+                            ← Back to Albums
+                          </button>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 11, color: 'var(--text-4)' }}>Album:</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>{activeAlbum.name}</span>
+                            <span style={{ fontSize: 11, color: 'var(--text-4)', marginLeft: 8 }}>({activeAlbum.date})</span>
+                          </div>
+                        </div>
+
+                        {/* Upload Zone */}
+                        <div
+                          className={`upload-zone${dragOver ? ' drag-over' : ''}`}
+                          onClick={() => fileInputRef.current.click()}
+                          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                          onDragLeave={() => setDragOver(false)}
+                          onDrop={handleDrop}
+                          style={{ marginBottom: 20 }}
+                        >
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleFileInput}
+                          />
+                          <div className="upload-icon"><UploadCloud size={26} /></div>
+                          <div className="upload-title">Click to Upload to Album or Drag & Drop</div>
+                          <div className="upload-sub">Supports <span>JPG, PNG, WEBP, GIF</span> — Multiple files allowed</div>
+                        </div>
+
+                        {/* Images list */}
+                        {activeAlbum.images && activeAlbum.images.length > 0 ? (
+                          <div>
+                            <div style={{ fontSize: 12, color: 'var(--text-4)', marginBottom: 10 }}>
+                              {activeAlbum.images.length} images inside this album
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14 }}>
+                              {activeAlbum.images.map(img => {
+                                const isCover = activeAlbum.thumbnail === img.src;
+                                return (
+                                  <div key={img.id} style={{ background: 'var(--white)', borderRadius: 'var(--radius-lg)', border: '1.5px solid var(--border-light)', overflow: 'hidden', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                                    <div style={{ height: 110, position: 'relative', background: '#eef2f6' }}>
+                                      <img src={img.src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                      {isCover && (
+                                        <span style={{ position: 'absolute', top: 6, left: 6, background: 'var(--accent)', color: '#fff', fontSize: 9, padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>
+                                          Cover Image
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div style={{ padding: 10, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 6 }}>
+                                      <p style={{ margin: 0, fontSize: 11, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={img.name}>
+                                        {img.name}
+                                      </p>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <button 
+                                          className="btn" 
+                                          style={{ 
+                                            padding: '3px 8px', 
+                                            fontSize: 9, 
+                                            background: isCover ? '#eef2f6' : 'transparent',
+                                            color: isCover ? 'var(--text-4)' : 'var(--accent)',
+                                            border: isCover ? '1px solid transparent' : '1px solid var(--accent)'
+                                          }} 
+                                          disabled={isCover}
+                                          type="button"
+                                          onClick={() => setAlbumCover(img.src)}
+                                        >
+                                          {isCover ? 'Cover' : 'Set Cover'}
+                                        </button>
+                                        <button type="button" className="btn-icon btn-icon-delete" onClick={() => deleteAlbumImage(img.id)}>
+                                          <Trash2 size={12} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="card">
+                            <div className="card-body">
+                              <div className="empty-state">
+                                <div className="empty-icon"><Image size={24} /></div>
+                                No images inside this album yet. Upload some images above!
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -696,7 +891,7 @@ export default function App() {
       {/* ── PROPERTY MODAL ── */}
       {propertyModalOpen && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setPropertyModalOpen(false)}>
-          <div className="modal">
+          <div className="modal modal-lg">
             <div className="modal-header">
               <h3 className="modal-title">{editingProperty ? 'Edit Property' : 'Add New Property'}</h3>
               <button className="modal-close" onClick={() => setPropertyModalOpen(false)}><X size={17} /></button>
@@ -704,6 +899,101 @@ export default function App() {
             <form onSubmit={handlePropertySubmit}>
               <div className="modal-body">
                 <div className="form-grid">
+                  {/* Thumbnail Image */}
+                  <div className="form-field form-grid-1">
+                    <label className="form-label" style={{ fontWeight: 600 }}>Property Thumbnail Image</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                      <div style={{ width: 88, height: 60, borderRadius: 8, background: '#eef2f6', overflow: 'hidden', flexShrink: 0, border: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {propForm.image ? (
+                          <img src={propForm.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ fontSize: 10, color: 'var(--text-4)' }}>No Image</span>
+                        )}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          onChange={e => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              const r = new FileReader();
+                              r.onload = (ev) => setPropForm(prev => ({ ...prev, image: ev.target.result }));
+                              r.readAsDataURL(file);
+                            }
+                          }} 
+                          style={{ fontSize: 12 }} 
+                        />
+                        {propForm.image && (
+                          <button type="button" className="btn btn-outline" style={{ padding: '3px 8px', fontSize: 11, alignSelf: 'flex-start' }} onClick={() => setPropForm(prev => ({ ...prev, image: '' }))}>Remove Thumbnail</button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Gallery Images */}
+                  <div className="form-field form-grid-1">
+                    <label className="form-label" style={{ fontWeight: 600 }}>Property Gallery Images</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        multiple 
+                        onChange={e => {
+                          const files = Array.from(e.target.files);
+                          files.forEach(file => {
+                            const r = new FileReader();
+                            r.onload = (ev) => {
+                              setPropForm(prev => ({
+                                ...prev,
+                                gallery: [...prev.gallery, ev.target.result]
+                              }));
+                            };
+                            r.readAsDataURL(file);
+                          });
+                        }} 
+                        style={{ fontSize: 12 }} 
+                      />
+                      {propForm.gallery && propForm.gallery.length > 0 && (
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', background: 'var(--smoke)', padding: 10, borderRadius: 8, border: '1.5px solid var(--border)' }}>
+                          {propForm.gallery.map((imgSrc, idx) => (
+                            <div key={idx} style={{ position: 'relative', width: 70, height: 48, borderRadius: 6, overflow: 'hidden', border: '1.5px solid var(--border)' }}>
+                              <img src={imgSrc} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <button 
+                                type="button" 
+                                onClick={() => {
+                                  setPropForm(prev => ({
+                                    ...prev,
+                                    gallery: prev.gallery.filter((_, i) => i !== idx)
+                                  }));
+                                }}
+                                style={{ 
+                                  position: 'absolute', 
+                                  top: 2, 
+                                  right: 2, 
+                                  background: 'rgba(0,0,0,0.6)', 
+                                  color: '#fff', 
+                                  border: 'none', 
+                                  borderRadius: '50%', 
+                                  width: 16, 
+                                  height: 16, 
+                                  fontSize: 10, 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                  lineHeight: 1
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="form-field">
                     <label className="form-label">Property Name *</label>
                     <input className="form-input" required placeholder="e.g. Adibatla Premium Layout" value={propForm.name} onChange={e => setPropForm({ ...propForm, name: e.target.value })} />
@@ -715,6 +1005,10 @@ export default function App() {
                   <div className="form-field">
                     <label className="form-label">Pricing Range *</label>
                     <input className="form-input" required placeholder="e.g. ₹30 L – ₹65 L" value={propForm.price} onChange={e => setPropForm({ ...propForm, price: e.target.value })} />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Price per Sq. Yd</label>
+                    <input className="form-input" placeholder="e.g. ₹4,200/Sq.Yd" value={propForm.pricePerSqYd} onChange={e => setPropForm({ ...propForm, pricePerSqYd: e.target.value })} />
                   </div>
                   <div className="form-field">
                     <label className="form-label">Plot Sizes</label>
@@ -733,13 +1027,22 @@ export default function App() {
                     <label className="form-label">Total Plots</label>
                     <input className="form-input" placeholder="e.g. 120" value={propForm.totalPlots} onChange={e => setPropForm({ ...propForm, totalPlots: e.target.value })} />
                   </div>
-                  <div className="form-field form-grid-1">
-                    <label className="form-label">RERA / LP Number</label>
-                    <input className="form-input" placeholder="e.g. RERA: P01100004567" value={propForm.rera} onChange={e => setPropForm({ ...propForm, rera: e.target.value })} />
-                  </div>
+
                   <div className="form-field form-grid-1">
                     <label className="form-label">Description</label>
                     <textarea className="form-textarea" placeholder="Brief property description..." value={propForm.description} onChange={e => setPropForm({ ...propForm, description: e.target.value })} />
+                  </div>
+                  <div className="form-field form-grid-1">
+                    <label className="form-label">Key Highlights (one per line)</label>
+                    <textarea className="form-textarea" style={{ minHeight: '90px' }} placeholder="e.g.&#10;NH-44 Highway Frontage&#10;40ft Wide BT Roads" value={propForm.highlightsText} onChange={e => setPropForm({ ...propForm, highlightsText: e.target.value })} />
+                  </div>
+                  <div className="form-field form-grid-1">
+                    <label className="form-label">Amenities (one per line)</label>
+                    <textarea className="form-textarea" style={{ minHeight: '90px' }} placeholder="e.g.&#10;Water Supply&#10;Electricity&#10;24/7 Security" value={propForm.amenitiesText} onChange={e => setPropForm({ ...propForm, amenitiesText: e.target.value })} />
+                  </div>
+                  <div className="form-field form-grid-1">
+                    <label className="form-label">Nearby Landmarks (one per line)</label>
+                    <textarea className="form-textarea" style={{ minHeight: '90px' }} placeholder="e.g.&#10;10 min from ORR Exit&#10;5 km from Shadnagar Town" value={propForm.nearbyLandmarksText} onChange={e => setPropForm({ ...propForm, nearbyLandmarksText: e.target.value })} />
                   </div>
                 </div>
               </div>
@@ -787,6 +1090,36 @@ export default function App() {
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setTestimonialModalOpen(false)}>Cancel</button>
                 <button type="submit" className="btn btn-gold">Save Review</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── CREATE ALBUM MODAL ── */}
+      {albumModalOpen && (
+        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setAlbumModalOpen(false)}>
+          <div className="modal modal-sm">
+            <div className="modal-header">
+              <h3 className="modal-title">Create New Gallery Album</h3>
+              <button className="modal-close" onClick={() => setAlbumModalOpen(false)}><X size={17} /></button>
+            </div>
+            <form onSubmit={handleAddAlbumSubmit}>
+              <div className="modal-body">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div className="form-field">
+                    <label className="form-label">Album / Event Name *</label>
+                    <input className="form-input" required placeholder="e.g. Annual Meet 2026" value={albumForm.name} onChange={e => setAlbumForm({ ...albumForm, name: e.target.value })} />
+                  </div>
+                  <div className="form-field">
+                    <label className="form-label">Event Date / Month</label>
+                    <input className="form-input" placeholder="e.g. July 2026" value={albumForm.date} onChange={e => setAlbumForm({ ...albumForm, date: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline" onClick={() => setAlbumModalOpen(false)}>Cancel</button>
+                <button type="submit" className="btn btn-gold">Create Album</button>
               </div>
             </form>
           </div>

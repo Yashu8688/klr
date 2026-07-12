@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MapPin, BadgeCheck, Ruler, ArrowRight } from 'lucide-react';
+import { MapPin, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function PropertyCard({ property, index }) {
@@ -23,14 +23,7 @@ export default function PropertyCard({ property, index }) {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
         />
-        {/* Approval badge */}
-        <div className="absolute top-3 left-3">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md text-white"
-                style={{ background: '#E8A020' }}>
-            <BadgeCheck size={11} />
-            {property.approval[0].includes('RERA') ? 'RERA Approved' : 'DTCP Approved'}
-          </span>
-        </div>
+
       </div>
 
       {/* Content */}
@@ -45,20 +38,10 @@ export default function PropertyCard({ property, index }) {
           <span>{property.location}</span>
         </div>
 
-        {/* Price / Size row */}
-        <div className="grid grid-cols-2 gap-3 pt-1 pb-1 border-t border-gray-100">
-          <div>
-            <p className="text-[10px] text-gray-400 font-inter uppercase tracking-wide mb-0.5">Price</p>
-            <p className="font-poppins font-bold text-[#0A1628] text-sm">{property.price}</p>
-          </div>
-          <div>
-            <p className="text-[10px] text-gray-400 font-inter uppercase tracking-wide mb-0.5">Plot Size</p>
-            <p className="font-poppins font-bold text-[#0A1628] text-sm">{property.plotSizes}</p>
-          </div>
-        </div>
 
-        <p className="text-gray-500 text-sm font-inter leading-relaxed line-clamp-2">
-          {property.shortDescription}
+
+        <p className="text-gray-500 text-sm font-inter leading-relaxed line-clamp-1">
+          {property.description}
         </p>
 
         {/* CTA */}

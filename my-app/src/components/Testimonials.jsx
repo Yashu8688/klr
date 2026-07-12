@@ -4,7 +4,7 @@ import { testimonials } from '../data/properties';
 function Initials({ name }) {
   const i = name.split(' ').map((n) => n[0]).join('').slice(0, 2);
   return (
-    <div className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0"
+    <div className="w-8 h-8 md:w-11 md:h-11 rounded-full flex items-center justify-center font-bold text-white text-[10px] md:text-sm flex-shrink-0"
          style={{ background: '#0A1628' }}>
       {i}
     </div>
@@ -14,25 +14,17 @@ function Initials({ name }) {
 function TestimonialCard({ t }) {
   return (
     <div
-      className="w-[380px] md:w-[480px] flex-shrink-0 p-5 md:p-6 rounded-2xl border border-gray-100 bg-[#F4F6FA] flex flex-col justify-between transition-all duration-300 hover:border-gray-300 hover:shadow-sm"
+      className="w-[240px] sm:w-[340px] md:w-[440px] flex-shrink-0 p-3 md:p-6 rounded-2xl border border-gray-100 bg-[#F4F6FA] flex flex-col justify-between transition-all duration-300 hover:border-gray-300 hover:shadow-sm"
     >
       <div>
-        <Quote size={28} className="mb-4 text-[#E8A020]" />
-        <p className="text-gray-600 font-inter text-sm leading-relaxed mb-5">
+        <Quote className="w-4 h-4 md:w-7 md:h-7 mb-2 md:mb-4 text-[#E8A020]" />
+        <p className="text-gray-600 font-inter text-[11px] md:text-sm leading-relaxed mb-3 md:mb-5">
           "{t.review}"
         </p>
       </div>
-      <div className="flex items-center justify-between gap-3 border-t border-gray-200/50 pt-4 mt-auto">
-        <div className="flex items-center gap-3">
-          <Initials name={t.name} />
-          <div>
-            <p className="font-poppins font-bold text-[#0A1628] text-sm leading-tight">{t.name}</p>
-            <p className="text-gray-400 text-xs font-inter mt-0.5">{t.location}</p>
-          </div>
-        </div>
-        <span className="text-[10px] font-semibold tracking-wider text-[#E8A020] uppercase bg-[#E8A020]/10 px-2.5 py-0.5 rounded-full">
-          {t.property}
-        </span>
+      <div className="border-t border-gray-200/50 pt-2.5 md:pt-4 mt-auto">
+        <p className="font-poppins font-bold text-[#0A1628] text-[11px] md:text-sm leading-tight">{t.name}</p>
+        <p className="text-gray-400 text-[9px] md:text-xs font-inter mt-0.5">{t.location}</p>
       </div>
     </div>
   );

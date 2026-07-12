@@ -8,7 +8,14 @@
 @layer base {
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  html { scroll-behavior: smooth; }
+  html { 
+    scroll-behavior: smooth; 
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  html::-webkit-scrollbar, body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
 
   body {
     font-family: 'Inter', sans-serif;
@@ -17,6 +24,16 @@
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+  }
+
+  h1 {
+    @apply text-3xl md:text-5xl;
+  }
+  h2 {
+    @apply text-2xl md:text-3xl;
+  }
+  h3 {
+    @apply text-xl md:text-2xl;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -62,7 +79,7 @@
   }
 
   .section-title {
-    @apply font-poppins text-3xl md:text-4xl font-bold text-[#0A1628] leading-tight;
+    @apply font-poppins text-2xl sm:text-3xl md:text-4xl font-bold text-[#0A1628] leading-tight;
   }
 
   .gold-label {

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Quote, Star, MapPin, Home as HomeIcon, MessageSquare, ArrowRight, CheckCircle } from 'lucide-react';
 import { testimonials, stats } from '../data/properties';
@@ -20,7 +21,7 @@ function Initials({ name }) {
   const [bg, text] = colors[name.charCodeAt(0) % colors.length];
   return (
     <div
-      className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-md"
+      className="w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center font-bold text-sm md:text-lg flex-shrink-0 shadow-md"
       style={{ background: bg, color: text }}
     >
       {initials}
@@ -51,92 +52,35 @@ function TestimonialCard({ t, index }) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
       transition={{ duration: 0.5, delay: index * 0.08 }}
-      className="bg-white rounded-2xl p-7 flex flex-col gap-4 card-shadow
+      className="bg-white rounded-2xl p-4 md:p-7 flex flex-col gap-3.5 md:gap-4 card-shadow
                  hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group"
     >
       {/* Top row */}
       <div className="flex items-start justify-between gap-3">
-        <Quote size={30} className="text-[#E8A020] flex-shrink-0 group-hover:scale-110 transition-transform duration-300" />
-        <StarRating rating={t.rating} />
+        <Quote className="w-6 h-6 md:w-[30px] md:h-[30px] text-[#E8A020] flex-shrink-0 group-hover:scale-110 transition-transform duration-300" />
       </div>
 
       {/* Review */}
-      <p className="text-gray-600 font-inter text-sm leading-relaxed flex-1">
+      <p className="text-gray-600 font-inter text-xs md:text-sm leading-relaxed flex-1">
         "{t.review}"
       </p>
-
-      {/* Property tag */}
-      <div className="inline-flex items-center gap-1.5 self-start px-3 py-1 rounded-full text-xs font-semibold"
-           style={{ background: 'rgba(232,160,32,0.1)', color: '#c9880f' }}>
-        <HomeIcon size={11} />
-        {t.property}
-      </div>
 
       {/* Divider */}
       <div className="border-t border-gray-100" />
 
       {/* Author */}
-      <div className="flex items-center gap-3">
-        <Initials name={t.name} />
-        <div className="min-w-0">
-          <p className="font-poppins font-bold text-[#0A1628] text-sm leading-tight">{t.name}</p>
-          <div className="flex items-center gap-1 mt-0.5 text-gray-400 text-xs font-inter">
-            <MapPin size={11} className="text-[#E8A020] flex-shrink-0" />
-            <span className="truncate">{t.location}</span>
-          </div>
-          <p className="text-gray-400 text-[11px] font-inter mt-0.5">{t.date}</p>
+      <div className="min-w-0">
+        <p className="font-poppins font-bold text-[#0A1628] text-xs md:text-sm leading-tight">{t.name}</p>
+        <div className="flex items-center gap-1 mt-0.5 text-gray-400 text-[10px] md:text-xs font-inter">
+          <MapPin size={11} className="text-[#E8A020] flex-shrink-0" />
+          <span className="truncate">{t.location}</span>
         </div>
       </div>
     </motion.div>
   );
 }
 
-/* ── Featured / Hero card (large) ── */
-function FeaturedCard({ t }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.97 }}
-      whileInView={{ opacity: 1, scale: 1 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.6 }}
-      className="relative rounded-3xl overflow-hidden p-8 md:p-12 flex flex-col gap-6"
-      style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0C2040 60%, #0F3070 100%)' }}
-    >
-      {/* Background decoration */}
-      <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-10"
-           style={{ background: 'radial-gradient(circle, #E8A020, transparent)' }} />
-      <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full opacity-10"
-           style={{ background: 'radial-gradient(circle, #0F56A8, transparent)' }} />
 
-      <Quote size={48} className="text-[#E8A020] relative z-10" />
-
-      <p className="text-white text-lg md:text-2xl font-poppins font-medium leading-relaxed relative z-10 max-w-3xl">
-        "{t.review}"
-      </p>
-
-      <div className="flex flex-wrap items-center gap-4 relative z-10">
-        <Initials name={t.name} />
-        <div>
-          <p className="font-poppins font-bold text-white text-base">{t.name}</p>
-          <div className="flex items-center gap-1.5 text-white/60 text-sm font-inter">
-            <MapPin size={12} className="text-[#E8A020]" />
-            {t.location}
-          </div>
-        </div>
-        <div className="ml-auto flex flex-col items-end gap-1.5">
-          <StarRating rating={t.rating} />
-          <span className="text-xs text-white/40 font-inter">{t.date}</span>
-        </div>
-      </div>
-
-      <div className="inline-flex items-center gap-2 self-start px-4 py-1.5 rounded-full text-xs font-semibold relative z-10"
-           style={{ background: 'rgba(232,160,32,0.15)', color: '#E8A020', border: '1px solid rgba(232,160,32,0.3)' }}>
-        <HomeIcon size={11} />
-        {t.property}
-      </div>
-    </motion.div>
-  );
-}
 
 /* ── Main Page ── */
 export default function TestimonialsPage() {
@@ -149,9 +93,7 @@ export default function TestimonialsPage() {
     [activeProperty]
   );
 
-  const totalReviews = testimonials.length;
-  const avgRating    = (testimonials.reduce((a, t) => a + t.rating, 0) / totalReviews).toFixed(1);
-  const fiveStars    = testimonials.filter(t => t.rating === 5).length;
+
 
   return (
     <>
@@ -194,55 +136,12 @@ export default function TestimonialsPage() {
             </p>
           </motion.div>
 
-          {/* Rating Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-wrap gap-6 mt-10 justify-center"
-          >
-            {[
-              { label: 'Happy Customers',   value: '500+' },
-              { label: 'Average Rating',    value: `${avgRating} ★` },
-              { label: '5-Star Reviews',    value: `${fiveStars}/${totalReviews}` },
-            ].map(s => (
-              <div key={s.label} className="text-white/80">
-                <span className="font-poppins font-bold text-xl text-[#E8A020]">{s.value}</span>
-                <span className="text-sm ml-1.5">{s.label}</span>
-              </div>
-            ))}
-          </motion.div>
+
         </div>
       </section>
-
-      {/* ── Featured Review ── */}
-      <section className="py-8" style={{ background: '#F4F6FA' }}>
-        <div className="container-xl">
-          <FeaturedCard t={testimonials[0]} />
-        </div>
-      </section>
-
       {/* ── All Reviews Grid ── */}
-      <section className="pb-20" style={{ background: '#F4F6FA' }}>
+      <section className="py-20" style={{ background: '#F4F6FA' }}>
         <div className="container-xl">
-          {/* Result count */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeProperty}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="mb-8"
-            >
-              <h2 className="font-poppins font-bold text-[#0A1628] text-xl">
-                {filtered.length} Review{filtered.length !== 1 ? 's' : ''}
-                {activeProperty !== 'All' && (
-                  <span className="text-[#E8A020]"> · {activeProperty}</span>
-                )}
-              </h2>
-            </motion.div>
-          </AnimatePresence>
-
           <AnimatePresence mode="wait">
             <motion.div
               key={activeProperty}
@@ -315,7 +214,7 @@ export default function TestimonialsPage() {
             transition={{ duration: 0.6 }}
           >
             <MessageSquare size={36} className="mx-auto mb-4 text-[#E8A020]" />
-            <h2 className="font-poppins font-bold text-white text-3xl md:text-4xl mb-3">
+            <h2 className="font-poppins font-bold text-white text-2xl md:text-4xl mb-3">
               Ready to Be Our Next Happy Customer?
             </h2>
             <p className="text-white/70 text-base max-w-lg mx-auto mb-8 font-inter">
@@ -326,9 +225,9 @@ export default function TestimonialsPage() {
               <a href="tel:9059613895" className="btn-gold">
                 Talk to an Expert <ArrowRight size={15} />
               </a>
-              <a href="/#contact" className="btn-outline-white">
+              <Link to="/contact" className="btn-outline-white">
                 Send Enquiry <ArrowRight size={15} />
-              </a>
+              </Link>
             </div>
           </motion.div>
         </div>

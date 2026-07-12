@@ -43,8 +43,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7 }}
-              className="font-poppins font-extrabold text-white leading-[1.08]"
-              style={{ fontSize: 'clamp(2.4rem, 5vw, 4rem)' }}
+              className="font-poppins font-extrabold text-white leading-[1.08] text-5xl sm:text-6xl md:text-7xl lg:text-[76px]"
             >
               Premium Plots
               <br />in Hyderabad
@@ -54,7 +53,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.12 }}
-              className="text-white/80 text-lg font-inter leading-relaxed"
+              className="text-white/80 text-lg md:text-xl font-inter leading-relaxed max-w-xl"
             >
               Pocket-Friendly Prices. Premium Locations.
               <br />Trusted Investment.
@@ -69,22 +68,22 @@ export default function Hero() {
               {/* Gold filled button */}
               <button
                 onClick={() => navigate('/properties')}
-                className="flex items-center gap-2 px-7 py-3.5 font-semibold rounded-full
-                           text-white text-sm transition-all duration-200 hover:brightness-110
+                className="flex items-center gap-2 px-8 py-4 font-semibold rounded-full
+                           text-white text-base transition-all duration-200 hover:brightness-110
                            hover:-translate-y-0.5 shadow-lg"
                 style={{ background: '#E8A020' }}
               >
-                View Properties <ArrowRight size={15} />
+                View Properties <ArrowRight size={17} />
               </button>
 
               {/* White outline button */}
               <button
                 onClick={() => navigate('/contact')}
-                className="flex items-center gap-2 px-7 py-3.5 font-semibold rounded-full
-                           text-white text-sm border border-white/60
+                className="flex items-center gap-2 px-8 py-4 font-semibold rounded-full
+                           text-white text-base border border-white/60
                            hover:bg-white/10 transition-all duration-200 hover:-translate-y-0.5"
               >
-                Contact Us <ArrowRight size={15} />
+                Contact Us <ArrowRight size={17} />
               </button>
             </motion.div>
           </div>

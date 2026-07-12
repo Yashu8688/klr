@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, SlidersHorizontal, MapPin, X, ChevronDown, ArrowRight, BadgeCheck
@@ -211,7 +212,7 @@ export default function PropertiesPage() {
             transition={{ duration: 0.6 }}
           >
             <BadgeCheck size={36} className="mx-auto mb-4 text-[#E8A020]" />
-            <h2 className="font-poppins font-bold text-white text-3xl md:text-4xl mb-3">
+            <h2 className="font-poppins font-bold text-white text-2xl md:text-4xl mb-3">
               Can't Find What You're Looking For?
             </h2>
             <p className="text-white/70 text-base max-w-lg mx-auto mb-8 font-inter">
@@ -222,9 +223,9 @@ export default function PropertiesPage() {
               <a href="tel:9059613895" className="btn-gold">
                 Call Us Now <ArrowRight size={15} />
               </a>
-              <a href="/#contact" className="btn-outline-white">
+              <Link to="/contact" className="btn-outline-white">
                 Send Enquiry <ArrowRight size={15} />
-              </a>
+              </Link>
             </div>
           </motion.div>
         </div>

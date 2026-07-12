@@ -13,7 +13,7 @@ import galleryDroneImg from '../assets/gallery-drone.png';
 
 export { heroImg, galleryRoadsImg, galleryEntranceImg, galleryGreeneryImg, galleryDroneImg };
 
-export const properties = [
+const defaultProperties = [
   {
     id: 'shadnagar-premium-plots',
     name: 'Shadnagar Premium Plots',
@@ -205,6 +205,37 @@ export const properties = [
     featured: false,
   },
 ];
+
+let loadedProperties = defaultProperties;
+if (typeof window !== 'undefined') {
+  const localData = localStorage.getItem('klr_properties');
+  if (localData) {
+    try {
+      const parsed = JSON.parse(localData);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        loadedProperties = parsed.map(item => {
+          const original = defaultProperties.find(d => d.id === item.id);
+          if (original) {
+            return {
+              ...original,
+              ...item,
+              image: original.image,
+              gallery: original.gallery,
+            };
+          }
+          return item;
+        });
+      }
+    } catch (e) {
+      console.error('Error loading properties from localStorage:', e);
+    }
+  } else {
+    localStorage.setItem('klr_properties', JSON.stringify(defaultProperties));
+  }
+}
+
+export const properties = loadedProperties;
+
 
 export const testimonials = [
   {

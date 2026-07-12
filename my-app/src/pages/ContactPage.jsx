@@ -9,15 +9,6 @@ import Footer from '../components/Footer';
 import WhatsAppButton from '../components/WhatsAppButton';
 
 /* ── Data ── */
-const propertyOptions = [
-  'Shadnagar Premium Plots',
-  'Maheshwaram Open Plots',
-  'Adibatla Premium Layout',
-  'Yacharam Investment Plots',
-  'Kandukur Investment Plots',
-  'General Enquiry',
-  'Other',
-];
 
 const contactDetails = [
   {
@@ -125,7 +116,7 @@ function FaqItem({ q, a, index }) {
 /* ── Main Page ── */
 export default function ContactPage() {
   const [form, setForm] = useState({
-    firstName: '', lastName: '', phone: '', email: '', interested: '', budget: '', message: '',
+    fullName: '', mobile: '', email: '', message: '',
   });
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -226,7 +217,8 @@ export default function ContactPage() {
                     <ContactCardInner c={c} />
                   </a>
                 ) : (
-                  <div className="flex flex-col gap-3 p-6 bg-white rounded-2xl card-shadow h-full">
+                  <div className="flex flex-col gap-3 p-6 bg-white rounded-2xl card-shadow
+                                  hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group h-full cursor-default">
                     <ContactCardInner c={c} />
                   </div>
                 )}
@@ -239,7 +231,7 @@ export default function ContactPage() {
       {/* ── Form + Map ── */}
       <section className="pb-20" style={{ background: '#F4F6FA' }}>
         <div className="container-xl">
-          <div className="grid lg:grid-cols-5 gap-8 items-start">
+          <div className="grid lg:grid-cols-5 gap-8 items-stretch">
 
             {/* ── Form ── */}
             <motion.div
@@ -247,7 +239,7 @@ export default function ContactPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="lg:col-span-3 bg-white rounded-3xl p-8 md:p-10 card-shadow"
+              className="lg:col-span-3 bg-white rounded-3xl p-8 md:p-10 card-shadow flex flex-col"
             >
               <div className="mb-7">
                 <p className="gold-label mb-2">Send a Message</p>
@@ -259,7 +251,7 @@ export default function ContactPage() {
                 </p>
               </div>
 
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="wait" className="flex-1 flex flex-col">
                 {sent ? (
                   <motion.div
                     key="success"
@@ -277,7 +269,7 @@ export default function ContactPage() {
                       Thank you! Our team will reach out to you within 24 hours.
                     </p>
                     <button
-                      onClick={() => { setSent(false); setForm({ firstName: '', lastName: '', phone: '', email: '', interested: '', budget: '', message: '' }); }}
+                      onClick={() => { setSent(false); setForm({ fullName: '', mobile: '', email: '', message: '' }); }}
                       className="mt-2 text-sm text-[#E8A020] font-semibold hover:underline"
                     >
                       Send Another Message
@@ -290,73 +282,41 @@ export default function ContactPage() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onSubmit={handleSubmit}
-                    className="space-y-4"
+                    className="space-y-4 flex flex-col flex-1"
                   >
                     {/* Name row */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1.5 font-inter uppercase tracking-wide">
-                          First Name <span className="text-[#E8A020]">*</span>
+                          Full Name <span className="text-[#E8A020]">*</span>
                         </label>
-                        <input type="text" required placeholder="Ramesh" className={inputCls} {...field('firstName')} />
+                        <input type="text" required placeholder="Ramesh" className={inputCls} {...field('fullName')} />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-gray-500 mb-1.5 font-inter uppercase tracking-wide">
-                          Last Name
+                          Mobile Number <span className="text-[#E8A020]">*</span>
                         </label>
-                        <input type="text" placeholder="Reddy" className={inputCls} {...field('lastName')} />
+                        <input type="tel" required placeholder="+91 98765 43210" className={inputCls} {...field('mobile')} />
                       </div>
                     </div>
 
-                    {/* Phone + Email */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1.5 font-inter uppercase tracking-wide">
-                          Phone Number <span className="text-[#E8A020]">*</span>
-                        </label>
-                        <input type="tel" required placeholder="+91 98765 43210" className={inputCls} {...field('phone')} />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-500 mb-1.5 font-inter uppercase tracking-wide">
-                          Email Address
-                        </label>
-                        <input type="email" placeholder="name@email.com" className={inputCls} {...field('email')} />
-                      </div>
-                    </div>
-
-                    {/* Interested in */}
+                    {/* Email */}
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 mb-1.5 font-inter uppercase tracking-wide">
-                        Interested In
+                        Email Address
                       </label>
-                      <select className={inputCls + ' cursor-pointer'} {...field('interested')}>
-                        <option value="">Select a property…</option>
-                        {propertyOptions.map(o => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                    </div>
-
-                    {/* Budget */}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-500 mb-1.5 font-inter uppercase tracking-wide">
-                        Budget Range
-                      </label>
-                      <select className={inputCls + ' cursor-pointer'} {...field('budget')}>
-                        <option value="">Select your budget…</option>
-                        {['Under ₹20 Lakhs', '₹20 – ₹35 Lakhs', '₹35 – ₹55 Lakhs', 'Above ₹55 Lakhs', 'Flexible'].map(b => (
-                          <option key={b} value={b}>{b}</option>
-                        ))}
-                      </select>
+                      <input type="email" placeholder="name@email.com" className={inputCls} {...field('email')} />
                     </div>
 
                     {/* Message */}
-                    <div>
+                    <div className="flex flex-col flex-1">
                       <label className="block text-xs font-semibold text-gray-500 mb-1.5 font-inter uppercase tracking-wide">
                         Your Message
                       </label>
                       <textarea
                         rows={4}
                         placeholder="Tell us what you're looking for or any specific questions…"
-                        className={inputCls + ' resize-none'}
+                        className={inputCls + ' resize-none flex-1 h-full'}
                         {...field('message')}
                       />
                     </div>
@@ -397,7 +357,7 @@ export default function ContactPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.15 }}
-              className="lg:col-span-2 flex flex-col gap-6"
+              className="lg:col-span-2 flex flex-col gap-6 h-full"
             >
               {/* Quick actions */}
               <div className="bg-white rounded-3xl p-7 card-shadow">
@@ -462,7 +422,7 @@ export default function ContactPage() {
               </div>
 
               {/* Map */}
-              <div className="bg-white rounded-3xl overflow-hidden card-shadow">
+              <div className="bg-white rounded-3xl overflow-hidden card-shadow flex flex-col flex-1">
                 <div className="p-5 border-b border-gray-50">
                   <div className="flex items-center gap-2">
                     <MapPin size={16} className="text-[#E8A020]" />
@@ -470,7 +430,7 @@ export default function ContactPage() {
                   </div>
                   <p className="text-xs text-gray-400 font-inter mt-1">Hyderabad &amp; surrounding districts</p>
                 </div>
-                <div className="h-48 w-full">
+                <div className="flex-1 w-full" style={{ minHeight: '12rem' }}>
                   <iframe
                     title="KLR Infra Location"
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d243646.9049219977!2d78.24323295!3d17.4123487!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb99daeaebd2c7%3A0xae93b78392bafbc2!2sHyderabad%2C%20Telangana!5e0!3m2!1sen!2sin!4v1699999999999!5m2!1sen!2sin"
@@ -526,7 +486,7 @@ export default function ContactPage() {
             transition={{ duration: 0.6 }}
           >
             <Phone size={36} className="mx-auto mb-4 text-[#E8A020]" />
-            <h2 className="font-poppins font-bold text-white text-3xl md:text-4xl mb-3">
+            <h2 className="font-poppins font-bold text-white text-2xl md:text-4xl mb-3">
               Let's Find Your Dream Plot Together
             </h2>
             <p className="text-white/70 text-base max-w-lg mx-auto mb-8 font-inter">

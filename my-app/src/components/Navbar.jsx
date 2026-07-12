@@ -44,60 +44,61 @@ export default function Navbar({ forceScrolled = false }) {
   const currentPath = location.pathname;
   const isSubPage   = location.pathname !== '/';
 
-  // Floating = scrolled more than 80px on ANY page
-  const isFloating = scrolled;
+  // Calculate scrolled active state
+  const isScrolledActive = forceScrolled || scrolled;
 
-  // At the very top of sub-pages, show a semi-transparent glass (hero is dark, same palette)
-  // At the very top of home page, fully transparent
-  const atTopStyle = isSubPage
+  const isTransparent = !isScrolledActive && !mobileOpen;
+
+  const wrapperStyle = {
+    top: isTransparent ? '0' : '16px',
+    padding: isTransparent ? '0' : '0 18px',
+    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+  };
+
+  const navStyle = isTransparent
     ? {
-        background: 'rgba(10, 22, 40, 0.92)',
-        backdropFilter: 'blur(16px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(16px) saturate(160%)',
-        border: 'none',
-        borderRadius: '0',
-        boxShadow: 'none',
-      }
-    : {
         background: 'transparent',
         backdropFilter: 'none',
         WebkitBackdropFilter: 'none',
         border: 'none',
         borderRadius: '0',
         boxShadow: 'none',
+        transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+      }
+    : {
+        background: 'rgba(10, 22, 40, 0.85)',
+        backdropFilter: 'blur(16px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '16px',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.24)',
+        transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
       };
-
-  const navStyle = {
-    background: 'rgba(10, 22, 40, 0.45)',
-    backdropFilter: 'blur(20px) saturate(180%)',
-    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: '16px',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.24)',
-  };
 
   return (
     /* Outer wrapper: controls position + margins */
     <div
       className="fixed z-50 left-0 right-0"
-      style={{
-        top: '16px',
-        padding: '0 18px',
-      }}
+      style={wrapperStyle}
     >
       <nav
-        className="transition-all duration-500"
+        className={`transition-all duration-500 mx-auto ${isTransparent ? 'w-full' : 'max-w-screen-2xl w-full'}`}
         style={navStyle}
       >
-        <div className="container-xl">
-          <div className="flex items-center justify-between h-[64px]">
+        <div 
+          className={isTransparent ? "container-xl" : "container-xl !px-4 md:!px-6"}
+          style={{ transition: 'padding 0.5s cubic-bezier(0.4, 0, 0.2, 1)' }}
+        >
+          <div className={`flex items-center justify-between transition-all duration-500 ${isTransparent ? 'h-[88px]' : 'h-[64px]'}`}>
 
             {/* ── Logo ── */}
             <button
               onClick={() => handleNav({ href: '#home', page: '/', isPage: false })}
               className="flex items-center gap-3.5"
             >
-              <img src={logoImg} alt="K.L.R. Infra Developers" className="h-11 w-auto object-contain" />
+              <div className="bg-white rounded-xl px-2 py-1 flex items-center justify-center shadow-sm">
+                <img src={logoImg} alt="K.L.R. Infra Developers" className="h-10 w-auto object-contain" />
+              </div>
               <div className="w-px h-6 bg-white/25 self-center" />
               <img src={yallamaLogoImg} alt="Yallama Logo" className="h-14 w-auto object-contain" />
             </button>

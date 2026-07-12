@@ -1,18 +1,9 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Mail, MapPin, Send, CheckCircle2 } from 'lucide-react';
-
-const propertyOptions = [
-  'Shadnagar Premium Plots',
-  'Maheshwaram Open Plots',
-  'Adibatla Premium Layout',
-  'Yacharam Investment Plots',
-  'Kandukur Investment Plots',
-  'Other',
-];
+import { Phone, Mail, MapPin, Send, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function Contact() {
-  const [form, setForm] = useState({ firstName: '', phone: '', email: '', interested: '', message: '' });
+  const [form, setForm] = useState({ fullName: '', mobile: '', email: '', message: '' });
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -25,142 +16,195 @@ export default function Contact() {
   };
 
   return (
-    <section id="contact" className="section-py bg-white">
+    <section id="contact" className="section-py" style={{ background: '#F4F6FA' }}>
       <div className="container-xl">
 
-        {/* Header */}
+        {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
           transition={{ duration: 0.6 }}
-          className="mb-12"
+          className="text-center mb-12"
         >
-          <p className="gold-label mb-3">Contact</p>
-          <h2 className="section-title">Get In Touch</h2>
+          <p className="gold-label mb-3">Contact Us</p>
+          <h2 className="section-title">Let's Start a Conversation</h2>
+          <p className="text-gray-500 font-inter text-base mt-3 max-w-xl mx-auto">
+            Have questions about a property? We're here to help you make the best investment decision.
+          </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-3 gap-12 items-start">
+        {/* Main Card */}
+        <div className="max-w-5xl mx-auto bg-white rounded-3xl overflow-hidden shadow-2xl grid lg:grid-cols-5"
+             style={{ boxShadow: '0 32px 80px rgba(10,22,40,0.18)' }}>
 
-          {/* ── Left: Info ── */}
+          {/* ── LEFT: Get In Touch Info (2 cols) ── */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.6 }}
-            className="space-y-5"
+            transition={{ duration: 0.7 }}
+            className="lg:col-span-2 p-5 md:p-12 flex flex-col justify-center bg-white"
           >
-            {[
-              { icon: Phone, label: '+91 90596 13895', href: 'tel:9059613895' },
-              { icon: Mail,  label: 'info@klrinfra.com', href: 'mailto:info@klrinfra.com' },
-              { icon: MapPin, label: 'Hyderabad, Telangana, India', href: null },
-            ].map(({ icon: Icon, label, href }) => (
-              <div key={label} className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
-                     style={{ background: 'rgba(232,160,32,0.12)' }}>
-                  <Icon size={16} style={{ color: '#E8A020' }} />
+            <p className="text-[#E8A020] text-xs font-bold tracking-widest uppercase mb-1.5 md:mb-3 font-inter">Contact</p>
+            <h3 className="font-poppins font-bold text-[#0A1628] text-2xl md:text-3xl mb-5 md:mb-10 leading-tight">
+              Get In Touch
+            </h3>
+
+            <div className="flex flex-col sm:flex-row lg:flex-col sm:flex-wrap lg:space-y-6 gap-3.5 sm:gap-6 lg:gap-0">
+              {/* Phone */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                     style={{ background: 'rgba(232,160,32,0.1)' }}>
+                  <Phone size={18} className="md:w-5 md:h-5" style={{ color: '#E8A020' }} />
                 </div>
-                {href ? (
-                  <a href={href} className="text-gray-700 font-inter text-sm hover:text-[#E8A020] transition-colors pt-2">
-                    {label}
-                  </a>
-                ) : (
-                  <p className="text-gray-700 font-inter text-sm pt-2">{label}</p>
-                )}
+                <a href="tel:9059613895" className="text-gray-700 font-inter text-sm md:text-base font-medium hover:text-[#E8A020] transition-colors">
+                  +91 90596 13895
+                </a>
               </div>
-            ))}
+
+              {/* Email */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                     style={{ background: 'rgba(232,160,32,0.1)' }}>
+                  <Mail size={18} className="md:w-5 md:h-5" style={{ color: '#E8A020' }} />
+                </div>
+                <a href="mailto:info@klrinfra.com" className="text-gray-700 font-inter text-sm md:text-base font-medium hover:text-[#E8A020] transition-colors">
+                  info@klrinfra.com
+                </a>
+              </div>
+
+              {/* Location */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                     style={{ background: 'rgba(232,160,32,0.1)' }}>
+                  <MapPin size={18} className="md:w-5 md:h-5" style={{ color: '#E8A020' }} />
+                </div>
+                <span className="text-gray-700 font-inter text-sm md:text-base font-medium">
+                  Hyderabad, Telangana, India
+                </span>
+              </div>
+            </div>
           </motion.div>
 
-          {/* ── Right: Form (spans 2 cols) ── */}
+          {/* ── RIGHT: Form Panel (3 cols) ── */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="lg:col-span-2"
+            transition={{ duration: 0.7 }}
+            className="lg:col-span-3 bg-white p-5 md:p-12 border-t lg:border-t-0 lg:border-l border-gray-100 flex flex-col justify-center"
           >
             {sent ? (
-              <div className="text-center py-10 space-y-3">
-                <CheckCircle2 size={44} className="mx-auto" style={{ color: '#E8A020' }} />
-                <p className="font-poppins font-bold text-[#0A1628] text-lg">Message Sent!</p>
-                <p className="text-gray-500 text-sm">We'll reach out within 24 hours.</p>
-                <button onClick={() => setSent(false)}
-                        className="text-sm text-[#E8A020] hover:underline font-semibold">
-                  Send Another Message
+              <div className="h-full flex flex-col items-center justify-center text-center py-16 space-y-4">
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mb-2"
+                     style={{ background: 'rgba(232,160,32,0.1)' }}>
+                  <CheckCircle2 size={40} style={{ color: '#E8A020' }} />
+                </div>
+                <h3 className="font-poppins font-bold text-[#0A1628] text-2xl">Message Sent!</h3>
+                <p className="text-gray-500 font-inter text-sm max-w-xs">
+                  Thank you for reaching out. Our team will contact you within 24 hours.
+                </p>
+                <button
+                  onClick={() => setSent(false)}
+                  className="mt-4 flex items-center gap-2 text-sm text-[#E8A020] hover:underline font-semibold"
+                >
+                  Send Another Message <ArrowRight size={14} />
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Row 1: Name | Phone | Email */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <input
-                    type="text" required placeholder="First Name"
-                    value={form.firstName}
-                    onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm font-inter
-                               text-gray-800 bg-[#F4F6FA] placeholder:text-gray-400
-                               focus:border-[#E8A020] focus:ring-2 focus:ring-[#E8A020]/15 outline-none transition"
-                  />
-                  <input
-                    type="tel" required placeholder="Phone Number"
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm font-inter
-                               text-gray-800 bg-[#F4F6FA] placeholder:text-gray-400
-                               focus:border-[#E8A020] focus:ring-2 focus:ring-[#E8A020]/15 outline-none transition"
-                  />
-                  <input
-                    type="email" placeholder="Email Address"
-                    value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm font-inter
-                               text-gray-800 bg-[#F4F6FA] placeholder:text-gray-400
-                               focus:border-[#E8A020] focus:ring-2 focus:ring-[#E8A020]/15 outline-none transition"
-                  />
+              <>
+                <div className="mb-6">
+                  <h3 className="font-poppins font-bold text-[#0A1628] text-lg md:text-xl mb-1">Send Us a Message</h3>
+                  <p className="text-gray-400 font-inter text-xs md:text-sm">Fill out the form and we'll get back to you shortly.</p>
                 </div>
 
-                {/* Row 2: Interested in */}
-                <select
-                  value={form.interested}
-                  onChange={(e) => setForm({ ...form, interested: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm font-inter
-                             text-gray-700 bg-[#F4F6FA]
-                             focus:border-[#E8A020] focus:ring-2 focus:ring-[#E8A020]/15 outline-none transition"
-                >
-                  <option value="">Interested In</option>
-                  {propertyOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-                </select>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  {/* Row 1: Name + Phone */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide font-inter">Full Name *</label>
+                      <input
+                        type="text" required placeholder="e.g. Ramesh Kumar"
+                        value={form.fullName}
+                        onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border text-sm font-inter text-gray-800
+                                   bg-[#F8F9FC] placeholder:text-gray-300 outline-none transition-all duration-200"
+                        style={{ borderColor: '#E5E7EB' }}
+                        onFocus={(e) => { e.target.style.borderColor = '#E8A020'; e.target.style.boxShadow = '0 0 0 3px rgba(232,160,32,0.12)'; }}
+                        onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = 'none'; }}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide font-inter">Mobile Number *</label>
+                      <input
+                        type="tel" required placeholder="+91 98765 43210"
+                        value={form.mobile}
+                        onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border text-sm font-inter text-gray-800
+                                   bg-[#F8F9FC] placeholder:text-gray-300 outline-none transition-all duration-200"
+                        style={{ borderColor: '#E5E7EB' }}
+                        onFocus={(e) => { e.target.style.borderColor = '#E8A020'; e.target.style.boxShadow = '0 0 0 3px rgba(232,160,32,0.12)'; }}
+                        onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = 'none'; }}
+                      />
+                    </div>
+                  </div>
 
-                {/* Row 3: Message */}
-                <textarea
-                  rows={4} placeholder="Message"
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm font-inter
-                             text-gray-800 bg-[#F4F6FA] placeholder:text-gray-400 resize-none
-                             focus:border-[#E8A020] focus:ring-2 focus:ring-[#E8A020]/15 outline-none transition"
-                />
+                  {/* Email */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide font-inter">Email Address</label>
+                    <input
+                      type="email" placeholder="ramesh@email.com"
+                      value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border text-sm font-inter text-gray-800
+                                 bg-[#F8F9FC] placeholder:text-gray-300 outline-none transition-all duration-200"
+                      style={{ borderColor: '#E5E7EB' }}
+                      onFocus={(e) => { e.target.style.borderColor = '#E8A020'; e.target.style.boxShadow = '0 0 0 3px rgba(232,160,32,0.12)'; }}
+                      onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = 'none'; }}
+                    />
+                  </div>
 
-                {/* Submit — right aligned */}
-                <div className="flex justify-end">
+                  {/* Message */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide font-inter">Your Message</label>
+                    <textarea
+                      rows={4} placeholder="Tell us about your requirements, budget, or any questions..."
+                      value={form.message}
+                      onChange={(e) => setForm({ ...form, message: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border text-sm font-inter text-gray-800
+                                 bg-[#F8F9FC] placeholder:text-gray-300 resize-none outline-none transition-all duration-200"
+                      style={{ borderColor: '#E5E7EB' }}
+                      onFocus={(e) => { e.target.style.borderColor = '#E8A020'; e.target.style.boxShadow = '0 0 0 3px rgba(232,160,32,0.12)'; }}
+                      onBlur={(e) => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = 'none'; }}
+                    />
+                  </div>
+
+                  {/* Submit */}
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex items-center gap-2 px-8 py-3 text-sm font-semibold rounded-lg text-white
-                               transition-all duration-200 hover:opacity-90 disabled:opacity-60"
-                    style={{ background: '#0A1628' }}
+                    className="w-full flex items-center justify-center gap-2.5 py-3.5 text-sm font-semibold rounded-xl
+                               text-white transition-all duration-200 hover:opacity-90 disabled:opacity-60
+                               hover:-translate-y-0.5 active:translate-y-0"
+                    style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0C2040 100%)' }}
                   >
                     {loading ? (
-                      <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending...</>
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Sending...
+                      </>
                     ) : (
-                      <><Send size={15} /> Send Message</>
+                      <>
+                        <Send size={15} />
+                        Send Message
+                      </>
                     )}
                   </button>
-                </div>
-              </form>
+                </form>
+              </>
             )}
           </motion.div>
-
         </div>
       </div>
     </section>
