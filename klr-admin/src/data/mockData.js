@@ -367,16 +367,10 @@ export async function getProperties() {
     querySnapshot.forEach((doc) => {
       list.push({ ...doc.data(), id: doc.id });
     });
-    if (list.length === 0) {
-      for (const prop of initialProperties) {
-        await setDoc(doc(db, "properties", prop.id), prop);
-        list.push(prop);
-      }
-    }
     return list;
   } catch (err) {
     console.error("Error reading properties: ", err);
-    return initialProperties;
+    return [];
   }
 }
 
@@ -407,16 +401,10 @@ export async function getLeads() {
     querySnapshot.forEach((doc) => {
       list.push({ ...doc.data(), id: doc.id });
     });
-    if (list.length === 0) {
-      for (const lead of initialLeads) {
-        await setDoc(doc(db, "leads", lead.id.toString()), lead);
-        list.push(lead);
-      }
-    }
     return list;
   } catch (err) {
     console.error("Error reading leads: ", err);
-    return initialLeads;
+    return [];
   }
 }
 
@@ -447,16 +435,10 @@ export async function getTestimonials() {
     querySnapshot.forEach((doc) => {
       list.push({ ...doc.data(), id: doc.id });
     });
-    if (list.length === 0) {
-      for (const test of initialTestimonials) {
-        await setDoc(doc(db, "testimonials", test.id.toString()), test);
-        list.push(test);
-      }
-    }
     return list;
   } catch (err) {
     console.error("Error reading testimonials: ", err);
-    return initialTestimonials;
+    return [];
   }
 }
 
@@ -487,16 +469,10 @@ export async function getGallery() {
     querySnapshot.forEach((doc) => {
       list.push({ ...doc.data(), id: doc.id });
     });
-    if (list.length === 0) {
-      for (const gal of initialGallery) {
-        await setDoc(doc(db, "gallery", gal.id), gal);
-        list.push(gal);
-      }
-    }
     return list;
   } catch (err) {
     console.error("Error reading gallery: ", err);
-    return initialGallery;
+    return [];
   }
 }
 
@@ -551,27 +527,10 @@ export async function getEventsGallery() {
     querySnapshot.forEach((doc) => {
       list.push({ ...doc.data(), id: doc.id });
     });
-    
-    const forceReseed = typeof window !== 'undefined' && localStorage.getItem('seeded_events_v4') !== 'true';
-    if (list.length === 0 || forceReseed) {
-      if (forceReseed) {
-        for (const docObj of querySnapshot.docs) {
-          await deleteDoc(docObj.ref);
-        }
-        list.length = 0;
-      }
-      for (const gal of initialEventsGallery) {
-        await setDoc(doc(db, "gallery_events", gal.id), gal);
-        list.push(gal);
-      }
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('seeded_events_v4', 'true');
-      }
-    }
     return list;
   } catch (err) {
     console.error("Error reading events gallery: ", err);
-    return initialEventsGallery;
+    return [];
   }
 }
 
@@ -602,27 +561,10 @@ export async function getClientsGallery() {
     querySnapshot.forEach((doc) => {
       list.push({ ...doc.data(), id: doc.id });
     });
-    
-    const forceReseed = typeof window !== 'undefined' && localStorage.getItem('seeded_clients_v4') !== 'true';
-    if (list.length === 0 || forceReseed) {
-      if (forceReseed) {
-        for (const docObj of querySnapshot.docs) {
-          await deleteDoc(docObj.ref);
-        }
-        list.length = 0;
-      }
-      for (const gal of initialClientsGallery) {
-        await setDoc(doc(db, "gallery_clients", gal.id), gal);
-        list.push(gal);
-      }
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('seeded_clients_v4', 'true');
-      }
-    }
     return list;
   } catch (err) {
     console.error("Error reading clients gallery: ", err);
-    return initialClientsGallery;
+    return [];
   }
 }
 
