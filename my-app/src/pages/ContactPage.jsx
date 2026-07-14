@@ -1,49 +1,57 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Phone, Mail, MapPin, Send, CheckCircle2, Clock,
-  MessageCircle, ChevronDown, ArrowRight, Building2
+  MessageCircle, ChevronDown, ArrowRight, Building2, AlertCircle
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import WhatsAppButton from '../components/WhatsAppButton';
+import { getContactInfo, getWhatsAppLink, getPhoneLink, getFullAddress } from '../data/contactData';
+import { db } from '../firebase';
+import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
 
-/* ── Data ── */
-
-const contactDetails = [
-  {
-    icon: Phone,
-    label: 'Call Us',
-    value: '+91 90596 13895',
-    sub: 'Mon – Sat, 10:00 AM – 6:00 PM',
-    href: 'tel:9059613895',
-    color: '#0A1628',
-  },
-  {
-    icon: MessageCircle,
-    label: 'WhatsApp',
-    value: '+91 90596 13895',
-    sub: 'Chat with us instantly',
-    href: 'https://wa.me/919059613895',
-    color: '#25D366',
-  },
-  {
-    icon: Mail,
-    label: 'Email Us',
-    value: 'info@klrinfra.com',
-    sub: 'We reply within 24 hours',
-    href: 'mailto:info@klrinfra.com',
-    color: '#E8A020',
-  },
-  {
-    icon: MapPin,
-    label: 'Visit Us',
-    value: 'Hyderabad, Telangana',
-    sub: 'India – 500 001',
-    href: null,
-    color: '#0F56A8',
-  },
-];
+/* ── Contact details built dynamically from localStorage ── */
+function getContactDetails(ci) {
+  const displayWa = ci.whatsapp ? ('+91 ' + ci.whatsapp.replace(/^91/, '')) : ci.primaryPhone;
+  return [
+    {
+      icon: Phone,
+      label: 'Call Us',
+      value: ci.primaryPhone,
+      sub: `${ci.officeHoursDays}, ${ci.officeHoursTime}`,
+      href: getPhoneLink(ci.primaryPhone),
+      color: '#0A1628',
+    },
+    {
+      icon: MessageCircle,
+      label: 'WhatsApp',
+      value: displayWa,
+      sub: 'Chat with us instantly',
+      href: getWhatsAppLink(ci.whatsapp),
+      color: '#25D366',
+    },
+    {
+      icon: Mail,
+      label: 'Email Us',
+      value: ci.email,
+      sub: 'We reply within 24 hours',
+      href: `mailto:${ci.email}`,
+      color: '#E8A020',
+    },
+    {
+      icon: MapPin,
+      label: 'Visit Us',
+      value: ci.addressLine1 || `${ci.city}, ${ci.state}`,
+      sub: ci.addressLine2 ? `${ci.addressLine2}, ${ci.city} – ${ci.pincode}` : 'Drop by our office',
+      href: (() => {
+        const raw = ci.mapEmbedUrl && ci.mapEmbedUrl.trim() ? ci.mapEmbedUrl : 'https://www.google.com/maps/search/?api=1&query=KLR+Infra+Developers+Nagole+Hyderabad';
+        return raw.includes('<iframe') ? (raw.match(/src="([^"]+)"/)?.[1] || raw) : raw;
+      })(),
+      color: '#0F56A8',
+    },
+  ];
+}
 
 const faqs = [
   {
@@ -115,18 +123,51 @@ function FaqItem({ q, a, index }) {
 
 /* ── Main Page ── */
 export default function ContactPage() {
+  const [ci, setContactInfo] = useState(getContactInfo());
   const [form, setForm] = useState({
     fullName: '', mobile: '', email: '', message: '',
   });
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    async function fetchContact() {
+      try {
+        const snap = await getDoc(doc(db, "settings", "contact"));
+        if (snap.exists()) {
+          setContactInfo(snap.data());
+        }
+      } catch (err) {
+        console.error("Error loading contact info: ", err);
+      }
+    }
+    fetchContact();
+  }, []);
+
+  const contactDetails = getContactDetails(ci);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise(r => setTimeout(r, 1200));
-    setLoading(false);
-    setSent(true);
+    try {
+      await addDoc(collection(db, 'leads'), {
+        id: Date.now(),
+        name: form.fullName,
+        phone: form.mobile,
+        email: form.email || '',
+        property: 'General Enquiry',
+        message: form.message || '',
+        status: 'New',
+        date: new Date().toLocaleDateString('en-IN', { month: 'long', day: '2-digit', year: 'numeric' }),
+        source: 'contact'
+      });
+      setSent(true);
+    } catch (err) {
+      console.error("Error submitting lead: ", err);
+      alert("Failed to submit message. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const field = (key) => ({
@@ -174,22 +215,78 @@ export default function ContactPage() {
               team is just a call or message away.
             </p>
           </motion.div>
+        </div>
+      </section>
 
+      {/* ── Founder Profile Section ── */}
+      <section className="py-10 md:py-14" style={{ background: '#F4F6FA' }}>
+        <div className="container-xl">
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-wrap gap-6 mt-8 justify-center"
+            initial={{ opacity: 0, y: 28 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="flex flex-col md:flex-row items-center gap-8 md:gap-14 bg-white rounded-3xl p-8 md:p-12"
+            style={{ boxShadow: '0 4px 40px rgba(10,22,40,0.09)', border: '1.5px solid #f0f0f0' }}
           >
-            {[
-              { icon: Clock, label: 'Mon – Sat, 10 AM – 6 PM' },
-              { icon: Phone, label: '+91 90596 13895' },
-            ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2 text-white/70 text-sm font-inter">
-                <Icon size={14} className="text-[#E8A020]" />
-                {label}
+            {/* Profile Photo */}
+            <div className="flex-shrink-0 flex flex-col items-center gap-4">
+              <div className="relative">
+                <div
+                  className="w-48 h-48 md:w-64 md:h-64 rounded-3xl overflow-hidden border-4"
+                  style={{ borderColor: '#E8A020', boxShadow: '0 0 0 6px rgba(232,160,32,0.12)' }}
+                >
+                  <img
+                    src={ci.founderPhoto || "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=400&q=80"}
+                    alt="K.L.R. Founder"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {/* Experience badge */}
+                <div
+                  className="absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full text-xs font-poppins font-bold whitespace-nowrap"
+                  style={{ background: '#E8A020', color: '#fff', boxShadow: '0 2px 12px rgba(232,160,32,0.4)' }}
+                >
+                  {ci.founderExperience || "10+ Years Experience"}
+                </div>
               </div>
-            ))}
+              <div className="mt-5 text-center">
+                <h3 className="font-poppins font-bold text-[#0A1628] text-lg md:text-xl">{ci.founderName || "K. Laxmi Reddy"}</h3>
+                <p className="text-[#E8A020] text-sm font-inter font-medium mt-0.5">{ci.founderTitle || "Founder & Managing Director"}</p>
+                <p className="text-gray-400 text-xs font-inter mt-1">{ci.founderSubtitle || "K.L.R. Infra Developers"}</p>
+              </div>
+            </div>
+
+            {/* Vertical Divider */}
+            <div className="hidden md:block w-px self-stretch" style={{ background: 'linear-gradient(to bottom, transparent, #e0e0e0, transparent)' }} />
+
+            {/* Bio Text */}
+            <div className="flex-1 text-center md:text-left">
+              <p className="gold-label mb-3 w-fit mx-auto md:mx-0">About Our Founder</p>
+              <h2 className="font-poppins font-bold text-[#0A1628] text-2xl md:text-3xl leading-snug mb-4">
+                {ci.founderHeading ? (
+                  ci.founderHeading.includes("Transparent Dealings") ? (
+                    <>
+                      {ci.founderHeading.split("Transparent Dealings")[0]}
+                      <span style={{ color: '#E8A020' }}>Transparent Dealings</span>
+                      {ci.founderHeading.split("Transparent Dealings")[1]}
+                    </>
+                  ) : (
+                    ci.founderHeading
+                  )
+                ) : (
+                  <>
+                    A Decade of Trust &amp; <span style={{ color: '#E8A020' }}>Transparent Dealings</span>
+                  </>
+                )}
+              </h2>
+              <p className="font-inter text-gray-600 text-sm md:text-base leading-relaxed mb-4">
+                {ci.founderText1 || "With over 10 years of hands-on experience in Hyderabad's real estate market, K. Laxmi Reddy has helped hundreds of families invest in their dream plots at the right price. His philosophy is simple — every client deserves complete transparency, honest pricing, and a property that truly grows in value."}
+              </p>
+              <p className="font-inter text-gray-500 text-sm leading-relaxed">
+                {ci.founderText2 || "From humble beginnings in plot advisory to building K.L.R. Infra Developers into one of the most trusted names in open-plot real estate across Shadnagar, Maheshwaram, Adibatla and beyond — the journey has always been guided by one principle: \"Your plot, your future.\""}
+              </p>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -364,17 +461,17 @@ export default function ContactPage() {
                 <h3 className="font-poppins font-bold text-[#0A1628] text-lg mb-5">Quick Actions</h3>
                 <div className="flex flex-col gap-3">
                   <a
-                    href="tel:9059613895"
+                    href={getPhoneLink(ci.primaryPhone)}
                     className="flex items-center gap-3 px-5 py-3.5 rounded-xl font-semibold text-sm
                                text-white transition-all duration-200 hover:opacity-90"
                     style={{ background: 'linear-gradient(135deg, #0A1628, #0F56A8)' }}
                   >
                     <Phone size={16} />
-                    Call +91 90596 13895
+                    Call {ci.primaryPhone}
                     <ArrowRight size={14} className="ml-auto" />
                   </a>
                   <a
-                    href="https://wa.me/919059613895"
+                    href={getWhatsAppLink(ci.whatsapp)}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-3 px-5 py-3.5 rounded-xl font-semibold text-sm
@@ -386,13 +483,13 @@ export default function ContactPage() {
                     <ArrowRight size={14} className="ml-auto" />
                   </a>
                   <a
-                    href="mailto:info@klrinfra.com"
+                    href={`mailto:${ci.email}`}
                     className="flex items-center gap-3 px-5 py-3.5 rounded-xl font-semibold text-sm
                                border border-gray-200 text-gray-700 hover:border-[#E8A020] hover:text-[#E8A020]
                                transition-all duration-200"
                   >
                     <Mail size={16} />
-                    info@klrinfra.com
+                    {ci.email}
                     <ArrowRight size={14} className="ml-auto" />
                   </a>
                 </div>
@@ -409,8 +506,7 @@ export default function ContactPage() {
                 </div>
                 <div className="space-y-3">
                   {[
-                    { day: 'Monday – Friday', time: '10:00 AM – 6:00 PM', active: true },
-                    { day: 'Saturday',         time: '10:00 AM – 4:00 PM', active: true },
+                    { day: ci.officeHoursDays || 'Mon – Sat', time: ci.officeHoursTime || '10:00 AM – 6:00 PM', active: true },
                     { day: 'Sunday',            time: 'Closed',             active: false },
                   ].map(({ day, time, active }) => (
                     <div key={day} className="flex items-center justify-between text-sm font-inter">
@@ -430,17 +526,33 @@ export default function ContactPage() {
                   </div>
                   <p className="text-xs text-gray-400 font-inter mt-1">Hyderabad &amp; surrounding districts</p>
                 </div>
-                <div className="flex-1 w-full" style={{ minHeight: '12rem' }}>
-                  <iframe
-                    title="KLR Infra Location"
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d243646.9049219977!2d78.24323295!3d17.4123487!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb99daeaebd2c7%3A0xae93b78392bafbc2!2sHyderabad%2C%20Telangana!5e0!3m2!1sen!2sin!4v1699999999999!5m2!1sen!2sin"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
+                <div className="flex-1 w-full relative" style={{ minHeight: '12rem' }}>
+                  {ci.mapEmbedUrl && (!ci.mapEmbedUrl.includes('google.com/maps/embed') && !ci.mapEmbedUrl.includes('<iframe')) ? (
+                    <div className="absolute inset-0 bg-gray-50 flex flex-col items-center justify-center p-5 text-center">
+                      <AlertCircle className="text-[#E8A020] mb-2" size={24} />
+                      <p className="font-poppins font-bold text-xs text-[#0A1628] mb-1">Standard Map Link Detected</p>
+                      <p className="text-gray-400 text-[11px] max-w-[240px] font-inter leading-normal">
+                        Google blocks embedding normal map links. Please copy the <strong>"Embed a map"</strong> code from Google Maps share panel.
+                      </p>
+                    </div>
+                  ) : (
+                    <iframe
+                      title="KLR Infra Location"
+                      src={
+                        ci.mapEmbedUrl
+                          ? (ci.mapEmbedUrl.includes('<iframe')
+                              ? (ci.mapEmbedUrl.match(/src="([^"]+)"/)?.[1] || ci.mapEmbedUrl)
+                              : ci.mapEmbedUrl)
+                          : "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d243646.9049219977!2d78.24323295!3d17.4123487!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bcb99daeaebd2c7%3A0xae93b78392bafbc2!2sHyderabad%2C%20Telangana!5e0!3m2!1sen!2sin!4v1699999999999!5m2!1sen!2sin"
+                      }
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                    />
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -494,11 +606,11 @@ export default function ContactPage() {
               site selection to registration.
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
-              <a href="tel:9059613895" className="btn-gold">
+              <a href={getPhoneLink(ci.primaryPhone)} className="btn-gold">
                 Call Now <ArrowRight size={15} />
               </a>
               <a
-                href="https://wa.me/919059613895"
+                href={getWhatsAppLink(ci.whatsapp)}
                 target="_blank"
                 rel="noreferrer"
                 className="btn-outline-white"

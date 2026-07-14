@@ -1,9 +1,30 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageCircle, X, Phone } from 'lucide-react';
+import { getContactInfo, getWhatsAppLink, getPhoneLink } from '../data/contactData';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function WhatsAppButton() {
+  const [ci, setContactInfo] = useState(getContactInfo());
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    async function fetchContact() {
+      try {
+        const snap = await getDoc(doc(db, "settings", "contact"));
+        if (snap.exists()) {
+          setContactInfo(snap.data());
+        }
+      } catch (err) {
+        console.error("Error loading contact info in whatsapp button: ", err);
+      }
+    }
+    fetchContact();
+  }, []);
+
+  const waLink = getWhatsAppLink(ci.whatsapp, "Hi, I'm interested in your properties. Please share more details.");
+  const phoneLink = getPhoneLink(ci.primaryPhone);
 
   return (
     <div className="fixed bottom-20 md:bottom-8 right-6 z-50 flex flex-col items-end gap-3">
@@ -49,7 +70,7 @@ export default function WhatsAppButton() {
             {/* CTA buttons */}
             <div className="flex flex-col gap-2">
               <a
-                href="https://wa.me/919059613895?text=Hi, I'm interested in your properties. Please share more details."
+                href={waLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full py-3 bg-emerald-500 hover:bg-emerald-600
@@ -61,11 +82,11 @@ export default function WhatsAppButton() {
                 Chat on WhatsApp
               </a>
               <a
-                href="tel:9059613895"
+                href={phoneLink}
                 className="flex items-center justify-center gap-2 w-full py-3 bg-primary/10 hover:bg-primary
                            text-primary hover:text-white font-semibold rounded-2xl text-sm transition-all duration-300"
               >
-                <Phone size={15} /> Call: 9059613895
+                <Phone size={15} /> Call: {ci.primaryPhone}
               </a>
             </div>
           </motion.div>

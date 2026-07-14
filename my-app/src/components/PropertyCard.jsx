@@ -18,7 +18,7 @@ export default function PropertyCard({ property, index }) {
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <img
-          src={property.image}
+          src={property.image || (property.gallery && property.gallery[0])}
           alt={property.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"

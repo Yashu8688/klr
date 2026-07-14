@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { properties } from '../data/properties';
+import { db } from '../firebase';
+import { doc, getDoc, collection, addDoc } from 'firebase/firestore';
 import {
   ArrowLeft, MapPin, BadgeCheck, Phone, MessageCircle,
   CheckCircle2, Star, Building2, Home, Landmark, CreditCard,
@@ -11,18 +12,44 @@ import {
 export default function PropertyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const property = properties.find((p) => p.id === id);
+  const [property, setProperty] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [lightbox, setLightbox] = useState(null);
   const [form, setForm] = useState({ name: '', phone: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
+    async function loadProperty() {
+      try {
+        const docSnap = await getDoc(doc(db, "properties", id));
+        if (docSnap.exists()) {
+          setProperty({ ...docSnap.data(), id: docSnap.id });
+        }
+      } catch (err) {
+        console.error("Error loading property: ", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProperty();
+  }, [id]);
+
+  useEffect(() => {
+    if (!property || !property.gallery || property.gallery.length === 0) return;
     const timer = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % property.gallery.length);
     }, 5000);
     return () => clearInterval(timer);
-  }, [property.gallery.length]);
+  }, [property]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-[#F4F6FA]">
+        <h2 className="font-poppins text-lg font-semibold text-[#0A1628]">Loading property details...</h2>
+      </div>
+    );
+  }
 
   if (!property) {
     return (
@@ -37,9 +64,32 @@ export default function PropertyDetail() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await new Promise((r) => setTimeout(r, 800));
-    setSubmitted(true);
+    try {
+      await addDoc(collection(db, 'leads'), {
+        id: Date.now(),
+        name: form.name,
+        phone: form.phone,
+        email: '',
+        property: property.name,
+        message: form.message,
+        status: 'New',
+        date: new Date().toLocaleDateString('en-IN', { month: 'long', day: '2-digit', year: 'numeric' }),
+        source: 'property-detail'
+      });
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Error submitting lead: ", err);
+      alert("Failed to submit inquiry. Please try again.");
+    }
   };
+
+  const approvals = [];
+  if (property.approval && Array.isArray(property.approval)) {
+    approvals.push(...property.approval);
+  } else {
+    if (property.dtcpApproved) approvals.push('DTCP Approved');
+    if (property.readyToRegister) approvals.push('Ready to Register');
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F6FA]">
@@ -64,7 +114,7 @@ export default function PropertyDetail() {
             <AnimatePresence initial={false}>
               <motion.img
                 key={activeSlide}
-                src={property.gallery[activeSlide] || property.image}
+                src={(property.gallery || [])[activeSlide] || property.image}
                 alt={property.name}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -81,7 +131,7 @@ export default function PropertyDetail() {
 
           {/* Gallery thumbnails */}
           <div className="flex gap-2 overflow-x-auto py-1 scrollbar-none">
-            {property.gallery.map((img, i) => (
+            {(property.gallery || []).map((img, i) => (
               <button
                 key={i}
                 onClick={() => setLightbox(i)}
@@ -105,18 +155,18 @@ export default function PropertyDetail() {
       <div className="container-xl pt-6 pb-2">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-wrap gap-2 mb-3 items-center">
-            {property.approval
-              .filter((a) => !a.toLowerCase().includes('lp no'))
+            {approvals
+              .filter((a) => typeof a === 'string' && !a.toLowerCase().includes('lp no'))
               .map((a) => (
                 <span key={a} className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#E8A020]/10 text-[#E8A020] border border-[#E8A020]/30 text-xs font-semibold rounded-full shadow-sm">
                   <BadgeCheck size={13} /> {a}
                 </span>
               ))}
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold shadow-sm ${
-              property.status === 'Limited Units' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
-            }`}>
-              {property.status}
-            </span>
+            {(property.status || property.readyToRegister) && (
+              <span className="inline-flex items-center px-3 py-1 bg-emerald-500 text-white text-xs font-semibold rounded-full shadow-sm">
+                {property.status || 'Ready to Register'}
+              </span>
+            )}
           </div>
           <h1 className="font-poppins text-3xl md:text-5xl font-extrabold text-[#0A1628]">{property.name}</h1>
           <p className="text-gray-500 flex items-center gap-2 mt-2.5 font-inter text-sm">
@@ -130,12 +180,10 @@ export default function PropertyDetail() {
         <div className="max-w-6xl mx-auto space-y-8">
 
           {/* Specifications Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             {[
-              { label: 'Price Range', value: 'Low Budget', icon: CreditCard },
               { label: 'Per Sq.Yd', value: property.pricePerSqYd, icon: Home },
               { label: 'Plot Sizes', value: property.plotSizes, icon: Building2 },
-              { label: 'Total Plots', value: property.totalPlots + ' Plots', icon: Landmark },
             ].map(({ label, value, icon: Icon }) => (
               <div key={label} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center hover:shadow-md transition-shadow duration-200">
                 <Icon size={20} className="text-[#E8A020] mx-auto mb-2" />
@@ -163,7 +211,7 @@ export default function PropertyDetail() {
               Key Highlights
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {property.highlights.map((h) => (
+              {(property.highlights || []).map((h) => (
                 <div key={h} className="flex items-start gap-2.5 p-3 bg-[#E8A020]/5 rounded-xl border border-[#E8A020]/10">
                   <CheckCircle2 size={15} className="text-[#E8A020] mt-0.5 flex-shrink-0" />
                   <span className="text-[#0A1628] text-xs md:text-sm font-inter font-medium">{h}</span>
@@ -179,14 +227,17 @@ export default function PropertyDetail() {
               Amenities
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
-              {property.amenities.map(({ label }) => (
-                <div key={label} className="flex items-center gap-3 p-3 md:p-4 bg-[#F4F6FA] rounded-2xl border border-gray-100">
-                  <div className="w-8 h-8 md:w-9 h-9 bg-[#0F56A8]/10 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Star size={15} className="text-[#0F56A8]" />
+              {(property.amenities || []).map((item) => {
+                const label = item?.label || (typeof item === 'string' ? item : 'Amenity');
+                return (
+                  <div key={label} className="flex items-center gap-3 p-3 md:p-4 bg-[#F4F6FA] rounded-2xl border border-gray-100">
+                    <div className="w-8 h-8 md:w-9 h-9 bg-[#0F56A8]/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Star size={15} className="text-[#0F56A8]" />
+                    </div>
+                    <span className="text-[#0A1628] font-inter text-xs md:text-sm font-medium">{label}</span>
                   </div>
-                  <span className="text-[#0A1628] font-inter text-xs md:text-sm font-medium">{label}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -197,7 +248,7 @@ export default function PropertyDetail() {
               Nearby Landmarks
             </h2>
             <div className="space-y-3.5">
-              {property.nearbyLandmarks.map((l) => (
+              {(property.nearbyLandmarks || []).map((l) => (
                 <div key={l} className="flex items-center gap-3">
                   <MapPin size={15} className="text-[#E8A020] flex-shrink-0" />
                   <span className="text-gray-700 font-inter text-xs md:text-sm">{l}</span>

@@ -1,13 +1,38 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { properties } from '../data/properties';
+import { db } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 import PropertyCard from './PropertyCard';
 import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const featured = properties.slice(0, 3); // Show 3 featured
-
 export default function Properties() {
   const navigate = useNavigate();
+  const [featured, setFeatured] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchFeatured() {
+      try {
+        const snap = await getDocs(collection(db, "properties"));
+        const list = [];
+        snap.forEach(doc => {
+          const data = { ...doc.data(), id: doc.id };
+          // Show if hidden is not explicitly true
+          if (!data.hidden) list.push(data);
+        });
+        setFeatured(list.slice(0, 3));
+      } catch (err) {
+        console.error("Error fetching featured properties: ", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchFeatured();
+  }, []);
+
+  if (loading || featured.length === 0) return null;
+
   return (
     <section id="properties" className="section-py" style={{ background: '#F4F6FA' }}>
       <div className="container-xl">

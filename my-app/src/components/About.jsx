@@ -1,15 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { Calendar, Users, Layers, MapPin, CheckCircle } from 'lucide-react';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const statIcons = [Calendar, Users, Layers, MapPin];
-
-const stats = [
-  { value: 2022, suffix: '', label: 'Year Established', isYear: true },
-  { value: 500,  suffix: '+', label: 'Happy Customers' },
-  { value: 25,   suffix: '+', label: 'Projects' },
-  { value: 10,   suffix: '+', label: 'Prime Locations' },
-];
 
 const points = [
   'DTCP & RERA approved properties only',
@@ -43,6 +38,34 @@ function Counter({ target, isYear }) {
 }
 
 export default function About() {
+  const [ci, setContactInfo] = useState(null);
+
+  useEffect(() => {
+    async function fetchContact() {
+      try {
+        const snap = await getDoc(doc(db, "settings", "contact"));
+        if (snap.exists()) {
+          setContactInfo(snap.data());
+        }
+      } catch (err) {
+        console.error("Error loading contact info in about: ", err);
+      }
+    }
+    fetchContact();
+  }, []);
+
+  const statYear = ci?.statYear ? parseInt(ci.statYear) : 2022;
+  const statCustomers = ci?.statCustomers ? parseInt(ci.statCustomers) : 500;
+  const statProjects = ci?.statProjects ? parseInt(ci.statProjects) : 25;
+  const statLocations = ci?.statLocations ? parseInt(ci.statLocations) : 10;
+
+  const stats = [
+    { value: statYear, suffix: '', label: 'Year Established', isYear: true },
+    { value: statCustomers,  suffix: '+', label: 'Happy Customers' },
+    { value: statProjects,   suffix: '+', label: 'Projects' },
+    { value: statLocations,   suffix: '+', label: 'Prime Locations' },
+  ];
+
   return (
     <section id="about" className="section-py bg-white">
       <div className="container-xl">

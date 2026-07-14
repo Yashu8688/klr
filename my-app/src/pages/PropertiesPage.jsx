@@ -1,18 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Search, SlidersHorizontal, MapPin, X, ChevronDown, ArrowRight, BadgeCheck
 } from 'lucide-react';
-import { properties } from '../data/properties';
+import { db } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 import PropertyCard from '../components/PropertyCard';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import WhatsAppButton from '../components/WhatsAppButton';
 
-/* ── filter helpers ── */
-const ALL_AREAS    = ['All', ...new Set(properties.map(p => p.area))];
-const ALL_STATUSES = ['All', ...new Set(properties.map(p => p.status))];
 const PRICE_RANGES = [
   { label: 'All Budgets',   min: 0,    max: Infinity },
   { label: 'Under ₹20 L',  min: 0,    max: 20 },
@@ -23,12 +21,15 @@ const PRICE_RANGES = [
 
 /* parse "₹18 L – ₹35 L" → midpoint number in Lakhs */
 function parseMidPrice(priceStr) {
+  if (!priceStr) return 0;
   const nums = [...priceStr.matchAll(/[\d,]+/g)].map(m => parseFloat(m[0].replace(',', '')));
   if (!nums.length) return 0;
   return nums.reduce((a, b) => a + b, 0) / nums.length;
 }
 
 export default function PropertiesPage() {
+  const [propertiesList, setPropertiesList] = useState([]);
+  const [loading, setModelLoading] = useState(true);
   const [search,      setSearch]      = useState('');
   const [area,        setArea]        = useState('All');
   const [status,      setStatus]      = useState('All');
@@ -36,10 +37,34 @@ export default function PropertiesPage() {
   const [sortBy,      setSortBy]      = useState('default');
   const [showFilters, setShowFilters] = useState(false);
 
+  useEffect(() => {
+    async function loadProps() {
+      try {
+        const snap = await getDocs(collection(db, "properties"));
+        const list = [];
+        snap.forEach(doc => {
+          const data = { ...doc.data(), id: doc.id };
+          // Show if hidden is not explicitly set to true
+          if (!data.hidden) list.push(data);
+        });
+        setPropertiesList(list);
+      } catch (err) {
+        console.error("Error loading properties: ", err);
+      } finally {
+        setModelLoading(false);
+      }
+    }
+    loadProps();
+  }, []);
+
+  const allAreas = useMemo(() => {
+    return ['All', ...new Set(propertiesList.map(p => p.area || p.location.split(',')[0].trim()))];
+  }, [propertiesList]);
+
   const selectedRange = PRICE_RANGES[priceRange];
 
   const filtered = useMemo(() => {
-    let list = [...properties];
+    let list = [...propertiesList];
 
     // search
     if (search.trim()) {
@@ -47,13 +72,13 @@ export default function PropertiesPage() {
       list = list.filter(p =>
         p.name.toLowerCase().includes(q) ||
         p.location.toLowerCase().includes(q) ||
-        p.area.toLowerCase().includes(q) ||
-        p.shortDescription.toLowerCase().includes(q)
+        (p.area || '').toLowerCase().includes(q) ||
+        (p.shortDescription || '').toLowerCase().includes(q)
       );
     }
 
     // area
-    if (area !== 'All') list = list.filter(p => p.area === area);
+    if (area !== 'All') list = list.filter(p => p.area === area || p.location.includes(area));
 
     // status
     if (status !== 'All') list = list.filter(p => p.status === status);
@@ -70,7 +95,7 @@ export default function PropertiesPage() {
     if (sortBy === 'featured')   list.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
 
     return list;
-  }, [search, area, status, priceRange, sortBy, selectedRange]);
+  }, [propertiesList, search, area, status, priceRange, sortBy, selectedRange]);
 
   const clearAll = () => {
     setSearch(''); setArea('All'); setStatus('All');
@@ -116,24 +141,7 @@ export default function PropertiesPage() {
             </p>
           </motion.div>
 
-          {/* Stats strip */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-wrap gap-6 mt-8 justify-center"
-          >
-            {[
-              { label: 'Total Properties', value: properties.length },
-              { label: 'Locations', value: ALL_AREAS.length - 1 },
-              { label: 'DTCP / RERA Approved', value: '100%' },
-            ].map(s => (
-              <div key={s.label} className="text-white/80">
-                <span className="font-poppins font-bold text-xl text-[#E8A020]">{s.value}</span>
-                <span className="text-sm ml-1.5">{s.label}</span>
-              </div>
-            ))}
-          </motion.div>
+
         </div>
       </section>
 

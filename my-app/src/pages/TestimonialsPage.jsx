@@ -1,14 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Quote, Star, MapPin, Home as HomeIcon, MessageSquare, ArrowRight, CheckCircle } from 'lucide-react';
-import { testimonials, stats } from '../data/properties';
+import { Quote, Star, MapPin, Home as HomeIcon, MessageSquare, ArrowRight, CheckCircle, X } from 'lucide-react';
+import { db } from '../firebase';
+import { collection, getDocs, query, where, doc, setDoc } from 'firebase/firestore';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import WhatsAppButton from '../components/WhatsAppButton';
-
-/* ── Helpers ── */
-const ALL_PROPERTIES = ['All', ...new Set(testimonials.map(t => t.property))];
 
 function Initials({ name }) {
   const initials = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
@@ -80,17 +78,73 @@ function TestimonialCard({ t, index }) {
   );
 }
 
-
-
 /* ── Main Page ── */
 export default function TestimonialsPage() {
+  const [testimonialsList, setTestimonialsList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeProperty, setActiveProperty] = useState('All');
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    location: '',
+    property: 'General',
+    review: '',
+    rating: 5
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.name.trim() || !form.location.trim() || !form.review.trim()) return;
+
+    setSubmitting(true);
+    try {
+      const testimonialId = Date.now().toString() + '-' + Math.random().toString(36).substring(2, 9);
+      const newTestimonial = {
+        id: testimonialId,
+        name: form.name.trim(),
+        location: form.location.trim(),
+        property: form.property,
+        review: form.review.trim(),
+        rating: form.rating,
+        hidden: true // requires admin approval
+      };
+
+      await setDoc(doc(db, "testimonials", testimonialId), newTestimonial);
+      setSubmitSuccess(true);
+    } catch (err) {
+      console.error("Error submitting review: ", err);
+      alert("Failed to submit review. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    async function fetchTestimonials() {
+      try {
+        const snap = await getDocs(query(collection(db, "testimonials"), where("hidden", "==", false)));
+        const data = [];
+        snap.forEach(doc => {
+          data.push({ ...doc.data(), id: doc.id });
+        });
+        setTestimonialsList(data);
+      } catch (err) {
+        console.error("Error fetching testimonials: ", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTestimonials();
+  }, []);
 
   const filtered = useMemo(() =>
     activeProperty === 'All'
-      ? testimonials
-      : testimonials.filter(t => t.property === activeProperty),
-    [activeProperty]
+      ? testimonialsList
+      : testimonialsList.filter(t => t.property === activeProperty),
+    [testimonialsList, activeProperty]
   );
 
 
@@ -130,10 +184,16 @@ export default function TestimonialsPage() {
             <h1 className="font-poppins text-3xl md:text-5xl font-bold text-white leading-tight mb-4">
               What Our <span style={{ color: '#E8A020' }}>Customers Say</span>
             </h1>
-            <p className="text-white/65 text-base md:text-lg max-w-xl font-inter mx-auto">
+            <p className="text-white/65 text-base md:text-lg max-w-xl font-inter mx-auto mb-6">
               Real experiences from real investors. See why 500+ happy families trust
               K.L.R. Infra Developers for their plot investments.
             </p>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-6 py-3 rounded-full text-sm font-poppins font-semibold bg-[#E8A020] text-white hover:bg-[#d08f1b] transition-all duration-300 shadow-md inline-flex items-center gap-2"
+            >
+              <MessageSquare size={16} /> Write a Review
+            </button>
           </motion.div>
 
 
@@ -232,6 +292,114 @@ export default function TestimonialsPage() {
           </motion.div>
         </div>
       </section>
+
+      {/* ── Add Testimonial Modal ── */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 20, opacity: 0 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full relative shadow-2xl border border-gray-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                className="absolute top-5 right-5 w-8 h-8 text-gray-400 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-full flex items-center justify-center transition-colors"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setSubmitSuccess(false);
+                  setForm({ name: '', location: '', property: 'Shadnagar Premium Plots', review: '', rating: 5 });
+                }}
+              >
+                <X size={18} />
+              </button>
+
+              {submitSuccess ? (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-100">
+                    <CheckCircle size={32} />
+                  </div>
+                  <h3 className="font-poppins font-bold text-[#0A1628] text-xl mb-2">Review Submitted!</h3>
+                  <p className="font-inter text-gray-500 text-sm leading-relaxed max-w-sm mx-auto mb-6">
+                    Thank you for your valuable feedback. Your review has been submitted and is pending approval by the admin.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setSubmitSuccess(false);
+                      setForm({ name: '', location: '', property: 'General', review: '', rating: 5 });
+                    }}
+                    className="w-full py-3 rounded-xl font-poppins font-semibold text-white bg-[#0A1628] hover:bg-[#0C2040] transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit}>
+                  <h3 className="font-poppins font-bold text-[#0A1628] text-xl mb-1">Write a Review</h3>
+                  <p className="font-inter text-gray-400 text-xs mb-6">Share your investment experience with K.L.R. Infra Developers</p>
+
+                  <div className="space-y-4">
+                    {/* Name */}
+                    <div>
+                      <label className="block font-poppins font-semibold text-[#0A1628] text-xs mb-1">Full Name</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Ramesh Reddy"
+                        value={form.name}
+                        onChange={(e) => setForm(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-inter text-[#0A1628] focus:border-[#E8A020] focus:ring-1 focus:ring-[#E8A020] outline-none"
+                      />
+                    </div>
+
+                    {/* Location */}
+                    <div>
+                      <label className="block font-poppins font-semibold text-[#0A1628] text-xs mb-1">Location / Designation</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Dilsukhnagar, Hyderabad"
+                        value={form.location}
+                        onChange={(e) => setForm(prev => ({ ...prev, location: e.target.value }))}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-inter text-[#0A1628] focus:border-[#E8A020] focus:ring-1 focus:ring-[#E8A020] outline-none"
+                      />
+                    </div>
+
+                    {/* Review Message */}
+                    <div>
+                      <label className="block font-poppins font-semibold text-[#0A1628] text-xs mb-1">Your Review</label>
+                      <textarea
+                        required
+                        rows={4}
+                        placeholder="Describe your experience with K.L.R. Infra Developers..."
+                        value={form.review}
+                        onChange={(e) => setForm(prev => ({ ...prev, review: e.target.value }))}
+                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-inter text-[#0A1628] focus:border-[#E8A020] focus:ring-1 focus:ring-[#E8A020] outline-none resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full mt-6 py-3 rounded-xl font-poppins font-semibold text-white bg-[#0A1628] hover:bg-[#0C2040] disabled:bg-gray-400 transition-colors flex items-center justify-center gap-2"
+                  >
+                    {submitting ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Footer />
       <WhatsAppButton />

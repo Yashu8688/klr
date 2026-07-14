@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<head><title>KLR Admin – Reset Data</title></head>
+<body>
+<script>
+  // Clear old localStorage so new mock data with hidden/dtcpApproved/readyToRegister/source fields loads
+  ['klr_properties','klr_leads','klr_testimonials','klr_gallery','klr_contact_info'].forEach(k => localStorage.removeItem(k));
+  document.write('<h2 style="font-family:sans-serif;color:green">✅ KLR localStorage cleared! <a href="/">Go to Admin Panel</a></h2>');
+</script>
+</body>
+</html>

@@ -1,18 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Mail, MapPin, Send, CheckCircle2, ArrowRight } from 'lucide-react';
+import { getContactInfo, getWhatsAppLink, getPhoneLink } from '../data/contactData';
+import { db } from '../firebase';
+import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
 
 export default function Contact() {
+  const [ci, setContactInfo] = useState(getContactInfo());
   const [form, setForm] = useState({ fullName: '', mobile: '', email: '', message: '' });
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    async function fetchContact() {
+      try {
+        const snap = await getDoc(doc(db, "settings", "contact"));
+        if (snap.exists()) {
+          setContactInfo(snap.data());
+        }
+      } catch (err) {
+        console.error("Error loading contact info: ", err);
+      }
+    }
+    fetchContact();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    setLoading(false);
-    setSent(true);
+    try {
+      await addDoc(collection(db, 'leads'), {
+        id: Date.now(),
+        name: form.fullName,
+        phone: form.mobile,
+        email: form.email || '',
+        property: 'General Enquiry',
+        message: form.message || '',
+        status: 'New',
+        date: new Date().toLocaleDateString('en-IN', { month: 'long', day: '2-digit', year: 'numeric' }),
+        source: 'home'
+      });
+      setSent(true);
+    } catch (err) {
+      console.error("Error submitting lead: ", err);
+      alert("Failed to submit inquiry. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -58,8 +92,8 @@ export default function Contact() {
                      style={{ background: 'rgba(232,160,32,0.1)' }}>
                   <Phone size={18} className="md:w-5 md:h-5" style={{ color: '#E8A020' }} />
                 </div>
-                <a href="tel:9059613895" className="text-gray-700 font-inter text-sm md:text-base font-medium hover:text-[#E8A020] transition-colors">
-                  +91 90596 13895
+                <a href={getPhoneLink(ci.primaryPhone)} className="text-gray-700 font-inter text-sm md:text-base font-medium hover:text-[#E8A020] transition-colors">
+                  {ci.primaryPhone}
                 </a>
               </div>
 
@@ -69,8 +103,8 @@ export default function Contact() {
                      style={{ background: 'rgba(232,160,32,0.1)' }}>
                   <Mail size={18} className="md:w-5 md:h-5" style={{ color: '#E8A020' }} />
                 </div>
-                <a href="mailto:info@klrinfra.com" className="text-gray-700 font-inter text-sm md:text-base font-medium hover:text-[#E8A020] transition-colors">
-                  info@klrinfra.com
+                <a href={`mailto:${ci.email}`} className="text-gray-700 font-inter text-sm md:text-base font-medium hover:text-[#E8A020] transition-colors">
+                  {ci.email}
                 </a>
               </div>
 
@@ -81,7 +115,7 @@ export default function Contact() {
                   <MapPin size={18} className="md:w-5 md:h-5" style={{ color: '#E8A020' }} />
                 </div>
                 <span className="text-gray-700 font-inter text-sm md:text-base font-medium">
-                  Hyderabad, Telangana, India
+                  {ci.city}, {ci.state}, India
                 </span>
               </div>
             </div>

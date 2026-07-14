@@ -3,6 +3,9 @@ import { Phone, Menu, X } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logoImg from '../assets/logo.png';
 import yallamaLogoImg from '../assets/yallama-logo.png';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { getContactInfo, getPhoneLink } from '../data/contactData';
 
 const navLinks = [
   { label: 'Home',         href: '#home',          page: '/',             isPage: false },
@@ -16,8 +19,23 @@ export default function Navbar({ forceScrolled = false }) {
   const [scrolled,   setScrolled]   = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeLink, setActiveLink] = useState('#home');
+  const [ci, setContactInfo] = useState(getContactInfo());
   const navigate  = useNavigate();
   const location  = useLocation();
+
+  useEffect(() => {
+    async function fetchContact() {
+      try {
+        const snap = await getDoc(doc(db, "settings", "contact"));
+        if (snap.exists()) {
+          setContactInfo(snap.data());
+        }
+      } catch (err) {
+        console.error("Error loading contact info in navbar: ", err);
+      }
+    }
+    fetchContact();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80);
@@ -128,13 +146,13 @@ export default function Navbar({ forceScrolled = false }) {
             {/* ── Phone CTA ── */}
             <div className="hidden md:flex">
               <a
-                href="tel:9059613895"
+                href={getPhoneLink(ci.primaryPhone)}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-inter font-semibold
                            border border-white/50 text-white
                            hover:border-[#E8A020] hover:text-[#E8A020] transition-all duration-200"
               >
                 <Phone size={13} />
-                +91 90596 13895
+                {ci.primaryPhone}
               </a>
             </div>
 
@@ -176,11 +194,11 @@ export default function Navbar({ forceScrolled = false }) {
                 );
               })}
               <a
-                href="tel:9059613895"
+                href={getPhoneLink(ci.primaryPhone)}
                 className="flex items-center gap-2 px-3 py-3 text-sm text-[#E8A020] font-semibold
                            border-t border-white/10 mt-1"
               >
-                <Phone size={14} /> +91 90596 13895
+                <Phone size={14} /> {ci.primaryPhone}
               </a>
             </div>
           </div>

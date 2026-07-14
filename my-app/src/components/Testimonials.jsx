@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react';
 import { Quote } from 'lucide-react';
-import { testimonials } from '../data/properties';
+import { db } from '../firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 
 function Initials({ name }) {
   const i = name.split(' ').map((n) => n[0]).join('').slice(0, 2);
@@ -31,8 +33,31 @@ function TestimonialCard({ t }) {
 }
 
 export default function Testimonials() {
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchTestimonials() {
+      try {
+        const snap = await getDocs(query(collection(db, "testimonials"), where("hidden", "==", false)));
+        const data = [];
+        snap.forEach(doc => {
+          data.push({ ...doc.data(), id: doc.id });
+        });
+        setList(data);
+      } catch (err) {
+        console.error("Error fetching testimonials: ", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTestimonials();
+  }, []);
+
+  if (loading || list.length === 0) return null;
+
   // Duplicate the array to create a seamless infinite scroll loop
-  const doubleTestimonials = [...testimonials, ...testimonials];
+  const doubleTestimonials = [...list, ...list];
 
   return (
     <section id="testimonials" className="section-py bg-white overflow-hidden">
