@@ -1509,3 +1509,107 @@ a { text-decoration: none; color: inherit; }
   overflow: hidden;
   min-height: 0;
 }
+
+/* ─── RESPONSIVE RULES ─── */
+@media (max-width: 991px) {
+  :root {
+    --sidebar-w: 240px;
+  }
+  
+  .sidebar {
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .sidebar-close {
+    display: block !important;
+  }
+  .sidebar-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 199;
+    backdrop-filter: blur(2px);
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  
+  .hamburger {
+    display: block !important;
+  }
+  
+  /* Tables */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Forms grids and cards */
+  .contact-info-grid, 
+  div[style*="gridTemplateColumns"],
+  div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .modal {
+    width: 95% !important;
+    max-height: 90vh !important;
+    margin: 20px auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-content {
+    padding: 16px !important;
+  }
+  
+  .topbar {
+    padding: 0 16px !important;
+  }
+  
+  .stats-grid-row-1,
+  .dashboard-grid-row-2,
+  .testimonials-grid,
+  .properties-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .filters-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .filters-row > * {
+    width: 100% !important;
+    margin-left: 0 !important;
+  }
+  
+  .section-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  
+  .section-header .btn-gold {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  
+  /* Modal responsive fields */
+  .form-grid-2,
+  .form-grid-3,
+  .form-grid-4 {
+    grid-template-columns: 1fr !important;
+  }
+  .modal-body {
+    padding: 16px !important;
+  }
+  .modal-footer {
+    padding: 12px 16px !important;
+  }
+}
